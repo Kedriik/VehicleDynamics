@@ -1,0 +1,6 @@
+BulletPhysics/*
+!BulletPhysics/.gitkeep
+x64
+Debug
+.vs
+VehicleDynamicModel/x64
