@@ -6,7 +6,7 @@
 #include "BulletDynamics/MLCPSolvers/btDantzigSolver.h"
 #include "BulletDynamics/MLCPSolvers/btSolveProjectedGaussSeidel.h"
 #include "BulletDynamics/MLCPSolvers/btMLCPSolver.h"
-
+#include "OpenDriveDocument.h"
 class btVehicleTuning;
 class btCollisionShape;
 
@@ -25,6 +25,7 @@ btDefaultCollisionConfiguration* m_collisionConfiguration;
 btDiscreteDynamicsWorld* m_dynamicsWorld;
 btRigidBody* m_carChassis;
 btCollisionShape* m_wheelShape;
+///////////////////////////
 
 static float gVehicleSteering = 0.f;
 static float steeringIncrement = 0.04f;
@@ -207,6 +208,7 @@ void initPhysics()
 
 int main()
 {	
+	OpenDriveDocument odd = OpenDriveDocument();
 	initPhysics();
 	DebugDraw* dd = new DebugDraw();
 	dd->init(800,600);

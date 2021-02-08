@@ -1,0 +1,10 @@
+<xml>
+    <rs_tpl>E:/RenderSettingTemplate.aep
+        <t>test</t>
+    </rs_tpl>
+    <logo_path>E:/logo.png</logo_path>
+    <src>E:/wed_01_Mamamiya_bbb/wed_01_Mamamiya_bbb.aep</src>
+    <dst>E:/66435/~out.aep</dst>
+    <out_path>E:/66435/out/SD.mp4</out_path>
+    <out_comp>SD</out_comp>
+</xml>
