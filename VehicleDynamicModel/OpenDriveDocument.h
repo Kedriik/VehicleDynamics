@@ -6,6 +6,10 @@
 #include <stdio.h>
 #include <optional>
 #include <iostream>
+//#include "glm\glm\glm.hpp"
+#include "../Renderer/glm/glm/glm.hpp"
+#include <vector>
+//using namespace glm;
 class XMLDocument;
 class XMLElement;
 enum XMLError;
@@ -35,78 +39,132 @@ struct header {
 	std::optional<std::string> vendor;
 
 };
-struct Geometry {
-	Geometry(double _s, double _x, double _y, double _hdg, double _length):
-		x(_x), y(_y), hdg(_hdg) {
-		if (_s < 0) throw "s value cannot be negative";
-		if (_length < 0) throw "length cannot be negative";
-		s = _s;
-		length = _length;
-	}
-	double s;
-	double x;
-	double y;
-	double hdg;
-	double length;
-};
-struct Line:Geometry {
-	Line(double _s, double _x, double _y, double _hdg, double _length):
-		Geometry( _s,_x,_y,_hdg,_length) {
+namespace PlanView{
+	struct Geometry {
+		Geometry(double _s, double _x, double _y, double _hdg, double _length):
+			x(_x), y(_y), hdg(_hdg) {
+			if (_s < 0) throw "s value cannot be negative";
+			if (_length < 0) throw "length cannot be negative";
+			s = _s;
+			length = _length;
+		}
+		double s;
+		double x;
+		double y;
+		double hdg;
+		double length;
 
-	}
-};
-struct Spiral :Geometry {
-	Spiral(double _curvStart, double _curvEnd, double _s, double _x, double _y, double _hdg, double _length):
-		curvStart(_curvStart), curvEnd(_curvEnd),Geometry( _s,_x,_y,_hdg,_length) {
+		virtual std::vector<glm::vec4> generateReferenceLine() = 0;
+	};
+	struct Line:Geometry {
+		Line(double _s, double _x, double _y, double _hdg, double _length):
+			Geometry( _s,_x,_y,_hdg,_length) {
+		}
+		std::vector<glm::vec4> generateReferenceLine()override {
+			std::vector<glm::vec4> vertices;
+			return vertices;
+		}
+	};
+	struct Spiral:Geometry {
+		Spiral(double _curvStart, double _curvEnd, double _s, double _x, double _y, double _hdg, double _length):
+			curvStart(_curvStart), curvEnd(_curvEnd),Geometry( _s,_x,_y,_hdg,_length) {
 
-	}
-	double curvStart;
-	double curvEnd;
-};
+		}
+		double curvStart;
+		double curvEnd;
+		std::vector<glm::vec4> generateReferenceLine()override {
+			std::vector<glm::vec4> vertices;
+			return vertices;
+		}
+	};
 
-struct Arc :Geometry {
-	Arc(double _curvature, double _s, double _x, double _y, double _hdg, double _length):
-		curvature(_curvature),Geometry(_s,_x,_y,_hdg,_length) {
+	struct Arc:Geometry {
+		Arc(double _curvature, double _s, double _x, double _y, double _hdg, double _length):
+			curvature(_curvature),Geometry(_s,_x,_y,_hdg,_length) {
 
-	}
-	double curvature;
-};
+		}
+		double curvature;
+		std::vector<glm::vec4> generateReferenceLine()override {
+			std::vector<glm::vec4> vertices;
+			return vertices;
+		}
+	};
 
-struct Poly3 :Geometry {
-	Poly3(double _a, double _b, double _c, double _d, double _s, double _x, double _y, double _hdg, double _length) :
-		a(_a), b(_b), c(_c), d(_d), Geometry(_s, _x, _y, _hdg, _length) {
+	struct Poly3:Geometry {
+		Poly3(double _a, double _b, double _c, double _d, double _s, double _x, double _y, double _hdg, double _length) :
+			a(_a), b(_b), c(_c), d(_d), Geometry(_s, _x, _y, _hdg, _length) {
 
-	}
-	double a, b, c, d;
-};
+		}
+		double a, b, c, d;
+		std::vector<glm::vec4> generateReferenceLine()override {
+			std::vector<glm::vec4> vertices;
+			return vertices;
+		}
+	};
+	struct ParamPoly3:Geometry {
+		ParamPoly3(double _aU, double _bU, double _cU, double _dU, double _aV, double _bV, double _cV, double _dV, std::string _pRange
+			, double _s, double _x, double _y, double _hdg, double _length) :aU(_aU), bU(_bU), cU(_cU), dU(_dU),
+			aV(_aV), bV(_bV), cV(_cV), dV(_dV),Geometry(_s, _x, _y, _hdg, _length) {
+			if (_pRange != "arcLength" || _pRange != "normalized") throw "Unknow value for pRange:" + _pRange;
+			pRange = _pRange;
 
+		}
+		double aU, bU, cU, dU, aV, bV, cV, dV;
+		std::string pRange;
+		std::vector<glm::vec4> generateReferenceLine()override {
+			std::vector<glm::vec4> vertices;
+			return vertices;
+		}
+	};
+}
 class OpenDriveDocument
 {
 public:
+	tinyxml2::XMLDocument doc;
 	OpenDriveDocument(){
 		std::string filePath = "D:\\Miscellaneous Projects\\VehicleDynamicModel\\VehicleDynamicModel\\VehicleDynamicModel\\Ex_Line-Spiral-Arc.xodr";
 		std::ifstream myfile;
-		tinyxml2::XMLDocument doc;
 		doc.LoadFile(filePath.c_str());
-		tinyxml2::XMLNode *n = doc.FirstChild();
-		//tinyxml2::XMLElement* e = 
-		//n->ToText()->
-		tinyxml2::XMLError error = doc.ErrorID();
-		// Navigate to the title, using the convenience function,
-		// with a dangerous lack of error checking.
-		tinyxml2::XMLNode* node = doc.FirstChild()->NextSibling();
-		tinyxml2::XMLElement* e1 = doc.FirstChildElement()->FirstChildElement("header");
-		float f;
-		error = e1->QueryFloatAttribute("revMinor", &f);
-		printf("Name of play (1): %f\n", f);
-
-		// Text is just another Node to TinyXML-2. The more
-		// general way to get to the XMLText:
-		tinyxml2::XMLText* textNode = doc.FirstChildElement("OpenDRIVE")->FirstChildElement("header")->FirstChild()->ToText();
-		
-		
+		this->parsePlanView(this->doc);
 	}
-	int parsePlanView() {
+
+	int parsePlanView(tinyxml2::XMLDocument& doc) {
+		std::vector<PlanView::Geometry*> geometries;
+		tinyxml2::XMLElement* n = doc.FirstChildElement()->FirstChildElement("road")->FirstChildElement("planView")->FirstChildElement();
+		while (n!=nullptr) {
+			tinyxml2::XMLElement* g = n->FirstChildElement();
+			const char* v = g->Value();
+			const char* v1 = g->Value();
+			double s,  x,  y,  hdg,  length;
+			PlanView::Geometry* geometry = nullptr;
+			tinyxml2::XMLError error = n->QueryDoubleAttribute("s", &s);
+			error = n->QueryDoubleAttribute("x", &x);
+			error = n->QueryDoubleAttribute("y", &y);
+			error = n->QueryDoubleAttribute("hdg", &hdg);
+			error = n->QueryDoubleAttribute("length", &length);
+			if(std::string(v) == "line"){
+				
+				geometry = new PlanView::Line(s, x, y, hdg, length);
+				//std::cout << v << std::endl;
+			}
+			else if (std::string(v) == "arc") {
+				double curvature;
+				error = n->QueryDoubleAttribute("curvature", &curvature);
+				//geometry = new Arc(curvature, s, x, y, hdg, length);
+				geometry = new PlanView::Arc(curvature, s, x, y, hdg, length);
+				
+			}
+			else if (std::string(v) == "spiral") {
+				double curvStart,curvEnd;
+				error = n->QueryDoubleAttribute("curvStart", &curvStart);
+				error = n->QueryDoubleAttribute("curvEnd", &curvEnd);
+				geometry = new PlanView::Spiral(curvStart, curvEnd,s, x, y, hdg, length);
+			}
+			geometries.push_back(geometry);
+			n = n->NextSiblingElement();
+		}
+		///tinyxml2::XMLNode* n2 = doc.NextSibling();
+		
 		throw "Not implemented";
 		return -1;
 	}
