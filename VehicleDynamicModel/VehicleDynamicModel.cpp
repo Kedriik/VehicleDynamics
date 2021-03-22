@@ -209,6 +209,7 @@ void initPhysics()
 int main()
 {	
 	OpenDriveDocument odd = OpenDriveDocument();
+	odd.generateReferenceLines();
 	initPhysics();
 	DebugDraw* dd = new DebugDraw();
 	dd->init(800,600);
