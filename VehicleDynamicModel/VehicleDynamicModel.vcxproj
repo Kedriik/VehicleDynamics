@@ -162,7 +162,6 @@
   <ItemGroup>
     <ClCompile Include="..\Renderer\LoadShaders\lib\LoadShaders.cpp" />
     <ClCompile Include="..\tinyxml2\tinyxml2.cpp" />
-    <ClCompile Include="OpenDriveDocument.cpp" />
     <ClCompile Include="VehicleDynamicModel.cpp" />
   </ItemGroup>
   <ItemGroup>
