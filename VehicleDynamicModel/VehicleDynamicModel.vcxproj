@@ -161,13 +161,16 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\Renderer\LoadShaders\lib\LoadShaders.cpp" />
+    <ClCompile Include="..\Renderer\Renderer.cpp" />
     <ClCompile Include="..\tinyxml2\tinyxml2.cpp" />
-    <ClCompile Include="VehicleDynamicModel.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="VehicleDynamicModel.h" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Renderer\camera.h" />
     <ClInclude Include="..\Renderer\DebugDraw.h" />
     <ClInclude Include="..\Renderer\LoadShaders\include\LoadShaders.h" />
+    <ClInclude Include="..\Renderer\Renderer.h" />
     <ClInclude Include="..\tinyxml2\tinyxml2.h" />
     <ClInclude Include="OpenDriveDocument.h" />
   </ItemGroup>

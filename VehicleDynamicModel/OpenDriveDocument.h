@@ -74,8 +74,10 @@ namespace PlanView{
 		double y;
 		double hdg;
 		double length;
+		
 		int n_vertices;
-		std::vector<glm::vec4> vertices;
+		std::string name;
+		std::vector<glm::dvec4> vertices;
 		virtual void generateReferenceLine() = 0;
 	};
 	struct Line:Geometry {
@@ -88,7 +90,7 @@ namespace PlanView{
 			for (int i = 0; i <= this->n_vertices; i++) {
 				glm::dvec4 position;
 				position.x = this->x + cos(this->hdg) * i*step;
-				position.y = this->y + sin(this->hdg) * i+step;
+				position.y = this->y + sin(this->hdg) * i*step;
 				position.z = 0;
 				this->vertices.push_back(position);
 			}
@@ -134,10 +136,11 @@ namespace PlanView{
 			position.x = x;
 			position.y = y;
 			position.z = 0;
+			position.w = 1;
 			position.x -= x_origin;
 			position.y -= y_origin;
-			glm::dquat rotate = glm::angleAxis(glm::degrees((this->hdg + this->angleOffset)), origin);
-			position = position * rotate;
+			glm::dquat rotate = glm::angleAxis(((this->hdg + this->angleOffset)), origin);
+			position =  rotate*position;
 			position.x += this->x;
 			position.y += this->y;
 			this->vertices.push_back(position);
@@ -283,7 +286,6 @@ namespace PlanView{
 				position.x = (1.0 / this->curvature) * (sin(fi) - sin(this->hdg)) + this->x;
 				position.y = (1.0 / this->curvature) * (cos(this->hdg) - cos(fi)) + this->y;
 				position.z = 0;
-				position.z = 0;
 				this->vertices.push_back(position);
 			}
 		}
@@ -320,7 +322,8 @@ private:
 	tinyxml2::XMLDocument doc;
 public:
 	OpenDriveDocument(){
-		std::string filePath = "D:\\Miscellaneous Projects\\VehicleDynamicModel\\VehicleDynamicModel\\VehicleDynamicModel\\Ex_Line-Spiral-Arc.xodr";
+		std::string filePath = "D:\\Miscellaneous Projects\\OpenDRIVEStandard\\xlmr\\Crossing8Course.xodr";
+			//"D:\\Miscellaneous Projects\\VehicleDynamicModel\\VehicleDynamicModel\\VehicleDynamicModel\\Ex_Line-Spiral-Arc.xodr";
 		std::ifstream myfile;
 		doc.LoadFile(filePath.c_str());
 		this->parsePlanView(this->doc);
@@ -330,43 +333,49 @@ public:
 			geometries.at(i)->generateReferenceLine();
 		}
 	}
+	std::vector<PlanView::Geometry*> getGeometries() {
+		return this->geometries;
+	}
 	int parsePlanView(tinyxml2::XMLDocument& doc) {
-		
-		tinyxml2::XMLElement* n = doc.FirstChildElement()->FirstChildElement("road")->FirstChildElement("planView")->FirstChildElement();
-		while (n!=nullptr) {
-			tinyxml2::XMLElement* g = n->FirstChildElement();
-			const char* v = g->Value();
-			const char* v1 = g->Value();
-			double s,  x,  y,  hdg,  length;
-			PlanView::Geometry* geometry = nullptr;
-			tinyxml2::XMLError error = n->QueryDoubleAttribute("s", &s);
-			error = n->QueryDoubleAttribute("x", &x);
-			error = n->QueryDoubleAttribute("y", &y);
-			error = n->QueryDoubleAttribute("hdg", &hdg);
-			error = n->QueryDoubleAttribute("length", &length);
-			if(std::string(v) == "line"){
+		tinyxml2::XMLElement* road = doc.FirstChildElement()->FirstChildElement("road");
+		while (road != nullptr) {
+			tinyxml2::XMLElement* geometry = road->FirstChildElement("planView")->FirstChildElement("geometry");
+			double s, x, y, hdg, length;
+			while (geometry != nullptr) {
 				
-				geometry = new PlanView::Line(s, x, y, hdg, length);
-				//std::cout << v << std::endl;
+				PlanView::Geometry* Geometry = nullptr;
+				tinyxml2::XMLError error = geometry->QueryDoubleAttribute("s", &s);
+				error = geometry->QueryDoubleAttribute("x", &x);
+				error = geometry->QueryDoubleAttribute("y", &y);
+				error = geometry->QueryDoubleAttribute("hdg", &hdg);
+				error = geometry->QueryDoubleAttribute("length", &length);
+				const char* v = geometry->FirstChildElement()->Value();
+				if (std::string(v) == "line") {
+
+					Geometry = new PlanView::Line(s, x, y, hdg, length);
+					Geometry->name = "Line";
+					//std::cout << "x:"<<x<<"y:"<<y << std::endl;
+				}
+				else if (std::string(v) == "arc") {
+					double curvature;
+					error = geometry->FirstChildElement()->QueryDoubleAttribute("curvature", &curvature);
+					//geometry = new Arc(curvature, s, x, y, hdg, length);
+					Geometry = new PlanView::Arc(curvature, s, x, y, hdg, length);
+					Geometry->name = "Arc";
+				}
+				else if (std::string(v) == "spiral") {
+					double curvStart, curvEnd;
+					error = geometry->FirstChildElement()->QueryDoubleAttribute("curvStart", &curvStart);
+					error = geometry->FirstChildElement()->QueryDoubleAttribute("curvEnd", &curvEnd);
+					Geometry = new PlanView::Spiral(curvStart, curvEnd, s, x, y, hdg, length);
+					Geometry->name = "Spiral";
+				}
+				geometries.push_back(Geometry);
+				geometry = geometry->NextSiblingElement("geometry");
 			}
-			else if (std::string(v) == "arc") {
-				double curvature;
-				error = n->FirstChildElement()->QueryDoubleAttribute("curvature", &curvature);
-				//geometry = new Arc(curvature, s, x, y, hdg, length);
-				geometry = new PlanView::Arc(curvature, s, x, y, hdg, length);
-				
-			}
-			else if (std::string(v) == "spiral") {
-				double curvStart,curvEnd;
-				error = n->FirstChildElement()->QueryDoubleAttribute("curvStart", &curvStart);
-				error = n->FirstChildElement()->QueryDoubleAttribute("curvEnd", &curvEnd);
-				geometry = new PlanView::Spiral(curvStart, curvEnd,s, x, y, hdg, length);
-			}
-			this->geometries.push_back(geometry);
-			n = n->NextSiblingElement();
+			road = road->NextSiblingElement("road");
 		}
-		///tinyxml2::XMLNode* n2 = doc.NextSibling();
-		
+
 		return 0;
 	}
 	
