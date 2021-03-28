@@ -73,10 +73,14 @@ class VerticesObject {
 protected:
 	std::vector<glm::dvec4> vertices;
 	GLuint vbo = 0;
-	glm::dvec4* pvbo;
+	GLuint color;
+	GLuint drawMode;
+	glm::vec4 vcolor;
 public:
-	VerticesObject(std::vector<glm::dvec4> _vertices){
+	VerticesObject(std::vector<glm::dvec4> _vertices, GLuint _drawMode, glm::vec4 _color = glm::vec4(0.0,1.0,0.0,1.0)){
 		this->vertices = _vertices;
+		this-> vcolor = _color;
+		this->drawMode = _drawMode;
 	}
 	virtual std::vector<dvec4> getVertices() {
 		return this->vertices;
@@ -85,12 +89,24 @@ public:
 		glGenBuffers(1, &this->vbo);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, this->vbo);
 		glBufferData(GL_SHADER_STORAGE_BUFFER, this->vertices.size() * sizeof(dvec4), this->vertices.data(), GL_DYNAMIC_COPY);
+		glGenBuffers(1, &this->color);
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, this->color);
+		glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(vec4), &this->vcolor.data, GL_DYNAMIC_COPY);
 	}
 	virtual GLuint getVBO() {
 		if (vbo == 0) {
 			throw "VBO not generated";
 		}
 		return this->vbo;
+	}
+	virtual GLuint getColor() {
+		if (color == 0) {
+			throw "Color not generated";
+		}
+		return this->color;
+	}
+	virtual GLuint getDrawMode() {
+		return this->drawMode;
 	}
 };
 class LoopObject {
@@ -107,7 +123,7 @@ public:
 };
 class ReferenceLine :public VerticesObject {
 public:
-	ReferenceLine(std::vector<glm::dvec4> _vertices):VerticesObject(_vertices) {
+	ReferenceLine(std::vector<glm::dvec4> _vertices):VerticesObject(_vertices, GL_LINE_STRIP) {
 		
 	}
 	void generateVBO() {
@@ -198,7 +214,7 @@ public:
 
 		vec3 camPos = vec3(0, 15.1211f, 0); vec3(51.2, 250, 51.2);
 		camera = Camera(window, width, height, camPos, vec3(0, -1, 0.0), vec3(1, 0, 0), 0.01);
-		camera.setSens(0.01f, 10.1f);
+		camera.setSens(0.01f, 100.1f);
 		camera.setPosition(vec3(-20, 10, 0));
 		camera.setUp(vec3(0, 1, 0));
 		camera.setForward(vec3(1, 0, 0));
@@ -285,6 +301,7 @@ public:
 			///////////////
 			this->updateLoopObjects();
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			glPointSize(10.0f);
 			ViewMatrix = camera.cameraPositionKeyboard(0.001);
 			GLuint drawMode = GL_LINE;
 			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
@@ -296,10 +313,10 @@ public:
 			glUseProgram(RenderProgram);
 			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, PerFrameBuffer);
 			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, ConstantBuffer);
-			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, ColorBuffer);
 			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 10, DebugBuffer);
 
 			for(int i=0;i<this->verticesObjects.size();i++){
+				glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, this->verticesObjects.at(i)->getColor());
 				glEnableVertexAttribArray(0);
 				glBindBuffer(GL_ARRAY_BUFFER, this->verticesObjects.at(i)->getVBO());
 				glVertexAttribPointer(
@@ -312,7 +329,7 @@ public:
 				);
 
 				//GLuint _vbo = this->verticesObjects.at(i)->getVBO();
-				glDrawArrays(GL_LINE_STRIP, 0, this->verticesObjects.at(i)->getVertices().size());
+				glDrawArrays(this->verticesObjects.at(i)->getDrawMode(), 0, this->verticesObjects.at(i)->getVertices().size());
 			}
 			///////////////
 			lastTime = currentTime;

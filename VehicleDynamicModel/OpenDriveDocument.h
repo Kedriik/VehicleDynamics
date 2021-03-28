@@ -8,6 +8,7 @@
 #include "../Renderer/glm/glm/glm.hpp"
 #include <vector>
 #include <math.h>
+#include <algorithm>
 //#include "..\Renderer\glm\gtx\transform.hpp"
 #include "../Renderer/glm/glm/gtx/transform.hpp"
 #include "../Renderer/glm/glm/gtc/matrix_transform.hpp"
@@ -139,7 +140,7 @@ namespace PlanView{
 			position.w = 1;
 			position.x -= x_origin;
 			position.y -= y_origin;
-			glm::dquat rotate = glm::angleAxis(((this->hdg + this->angleOffset)), origin);
+			glm::dquat rotate = glm::angleAxis(this->hdg + this->angleOffset, origin);
 			position =  rotate*position;
 			position.x += this->x;
 			position.y += this->y;
@@ -147,7 +148,7 @@ namespace PlanView{
 		}
 		void generateReferenceLine()override {
 			double  a = 0;
-			int n_integral = 4000;
+			int n_integral = 10000;
 			double x;
 			double y;
 			double start_curvature, end_curvature;
@@ -246,8 +247,8 @@ namespace PlanView{
 				a = 1 / (sqrt(2 * (1 / abs(end_curvature)) * (total_len)));
 				double step = this->length / this->n_vertices;
 				double x_origin = 0, y_origin = 0, x_origin_d = 0, y_origin_d = 0;
-				double ds = 0.001;
-				n_integral = 4000;
+				double ds = 0.1;
+
 				if (reversed) {
 					x_origin = (1 / a) * trapezoidalIntegral(fx, 0.0, a * (total_len), n_integral);
 					y_origin = direction * (1 / a) * trapezoidalIntegral(fy, 0.0, a * (total_len), n_integral);
@@ -267,6 +268,7 @@ namespace PlanView{
 
 					this->transformAndAddVertex(x, y, x_origin, y_origin);
 				}
+				std::reverse(this->vertices.begin(), this->vertices.end());
 
 			}
 		}
@@ -322,8 +324,8 @@ private:
 	tinyxml2::XMLDocument doc;
 public:
 	OpenDriveDocument(){
-		std::string filePath = "D:\\Miscellaneous Projects\\OpenDRIVEStandard\\xlmr\\Crossing8Course.xodr";
-			//"D:\\Miscellaneous Projects\\VehicleDynamicModel\\VehicleDynamicModel\\VehicleDynamicModel\\Ex_Line-Spiral-Arc.xodr";
+		std::string filePath = //"D:\\Miscellaneous Projects\\OpenDRIVEStandard\\xlmr\\Crossing8Course.xodr";
+			"D:\\Miscellaneous Projects\\VehicleDynamicModel\\VehicleDynamicModel\\VehicleDynamicModel\\Ex_Line-Spiral-Arc.xodr";
 		std::ifstream myfile;
 		doc.LoadFile(filePath.c_str());
 		this->parsePlanView(this->doc);

@@ -16,4 +16,5 @@ layout( std430, binding=10 ) buffer DebugBuffer
 void main()
 {
 	gl_Position = ProjectionMatrix*ViewMatrix*vec4(vertexPosition_modelspace.xyz,1);
+	
 }
