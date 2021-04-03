@@ -103,8 +103,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
@@ -164,6 +163,7 @@
     <ClCompile Include="..\Renderer\Renderer.cpp" />
     <ClCompile Include="..\tinyxml2\tinyxml2.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="OpenDriveDocument.cpp" />
     <ClCompile Include="VehicleDynamicModel.h" />
   </ItemGroup>
   <ItemGroup>

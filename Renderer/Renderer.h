@@ -214,7 +214,7 @@ public:
 
 		vec3 camPos = vec3(0, 15.1211f, 0); vec3(51.2, 250, 51.2);
 		camera = Camera(window, width, height, camPos, vec3(0, -1, 0.0), vec3(1, 0, 0), 0.01);
-		camera.setSens(0.01f, 100.1f);
+		camera.setSens(0.1f, 1000.1f);
 		camera.setPosition(vec3(-20, 10, 0));
 		camera.setUp(vec3(0, 1, 0));
 		camera.setForward(vec3(1, 0, 0));
