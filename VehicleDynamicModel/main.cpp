@@ -13,7 +13,10 @@ int main(int argc, char** argv)
 	else {
 		throw "No opendrive document";
 	}
-
+	int generate_gaps = false;
+	if (argc > 2) {
+		generate_gaps = int(argv[2]);
+	}
 	OpenDriveDocument odd = OpenDriveDocument(openDriveFilePath);
 	odd.generateReferenceLines();
 	
@@ -33,7 +36,7 @@ int main(int argc, char** argv)
 
 	}
 	double gap = 5.0;
-	int generate_gaps = false;
+	
 	if(generate_gaps){
 		for (int i = 0; i < odd.getRoads().size(); i++) {
 			Road r = odd.getRoads().at(i);

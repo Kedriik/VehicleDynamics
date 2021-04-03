@@ -69,11 +69,68 @@ struct header {
 enum TrafficRule {
 	defaultTrafficRule = 0
 };
+enum class ElementType {
+	road = 0,
+	junction = 1
+};
+enum class ContactPoint {
+	start = 0,
+	end = 1
+};
+struct Predecessor {
+	std::string elementId;
+	ElementType elementType;
+	std::optional <ContactPoint> contactPoint;
+	std::optional<double> elementS;
+	std::optional<int> elementDir;
+	Predecessor(std::string _elementId, ElementType _elementType,
+		std::optional <double> _elementS = std::optional<double>(),
+		std::optional <int> _elementDir = std::optional <int>(),
+		std::optional<ContactPoint> _contactPoint = std::optional<ContactPoint>()) :
+		elementId(_elementId), contactPoint(_contactPoint), elementType(_elementType), elementS(_elementS), elementDir(_elementDir) {
+	}
+	Predecessor() {
+
+	}
+};
+struct Successor {
+	std::string elementId;
+	ElementType elementType;
+	std::optional <ContactPoint> contactPoint;
+	std::optional<double> elementS;
+	std::optional<int> elementDir;
+	Successor(std::string _elementId, ElementType _elementType, 
+		std::optional <double> _elementS = std::optional<double>(),
+		std::optional <int> _elementDir = std::optional <int>(),
+		std::optional<ContactPoint> _contactPoint  = std::optional<ContactPoint>()) :
+		elementId(_elementId), contactPoint(_contactPoint), elementType(_elementType), elementS(_elementS), elementDir(_elementDir) {
+	}
+	Successor() {
+
+	}
+};
 struct Link {
-	Link() {
+	Successor successor;
+	Predecessor predecessor;
+	Link(Successor _successor, Predecessor _predecessor)
+		:successor(_successor),predecessor(_predecessor)
+	{
 
 	}
 	~Link() {
+
+	}
+};
+enum class CountryCode {
+	PL = 0,
+	DE = 1
+};
+struct Type {
+	double s;
+	std::string type;
+	std::optional<CountryCode> countryCode;
+	Type(double _s,std::string _type, std::optional<CountryCode> _countryCode = std::optional<CountryCode>())
+		:s(_s),type(_type),countryCode(_countryCode) {
 
 	}
 };
@@ -397,10 +454,14 @@ private:
 	std::string id;
 	std::string junction;
 	PlanView planView;
+	Link link;
+	std::vector<Type> types;
 public:
 	Road(double _length, std::string _id, std::string _junction, 
-		std::optional<std::string> _name,std::optional<TrafficRule> _rule, PlanView _planView):
-	length(_length),id(_id),junction(_junction),name(_name),rule(_rule),planView(_planView)
+		std::optional<std::string> _name,std::optional<TrafficRule> _rule, PlanView _planView,
+	Link _link, std::vector<Type> _types):
+	length(_length),id(_id),junction(_junction),name(_name),rule(_rule),planView(_planView),
+	link(_link),types(_types)
 	{
 
 	}
@@ -415,14 +476,20 @@ public:
 class OpenDriveDocument
 {
 private:
+	
 	std::vector<Road> roads;
 	tinyxml2::XMLDocument doc;
 	void populateGeometries(std::vector<Geometry*>& geometries, tinyxml2::XMLElement* xml_road);
+	Link createLink(tinyxml2::XMLElement* xml_road);
+	template <class T>
+	void populateCessor(tinyxml2::XMLElement* xml_cessor, T& cessor);
+	void populateTypes(tinyxml2::XMLElement* xml_road, std::vector<Type> &types);
 public:
 	OpenDriveDocument(std::string filePath);
 	void generateReferenceLines();
 	void printOpenDriveDocument();
 	std::vector<Road> getRoads();
-	int parsePlanView(tinyxml2::XMLDocument& doc);
+	int parseOpenDriveDocument(tinyxml2::XMLDocument& doc);
 };
+
 
