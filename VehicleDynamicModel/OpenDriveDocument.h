@@ -5,16 +5,16 @@
 #include <string.h>
 #include <stdio.h>
 #include <optional>
-#include "../Renderer/glm/glm/glm.hpp"
+#include "Renderer/glm/glm/glm.hpp"
 
 #include <vector>
 #include <math.h>
 #include <algorithm>
 //#include "..\Renderer\glm\gtx\transform.hpp"
-#include "../Renderer/glm/glm/gtx/transform.hpp"
-#include "../Renderer/glm/glm/gtc/matrix_transform.hpp"
-#include "../Renderer/glm/glm/gtc/quaternion.hpp"
-#include "../Renderer/glm/glm/gtx/quaternion.hpp"
+#include "Renderer/glm/glm/gtx/transform.hpp"
+#include "Renderer/glm/glm/gtc/matrix_transform.hpp"
+#include "Renderer/glm/glm/gtc/quaternion.hpp"
+#include "Renderer/glm/glm/gtx/quaternion.hpp"
 #include <iostream>
 #include <functional>
 class OpenDriveMath {

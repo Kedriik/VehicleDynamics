@@ -75,9 +75,9 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(SolutionDir)Renderer\glfw-3.2.1.bin.WIN64\include\GLFW;$(SolutionDir)Renderer\LoadShaders\include\GL;$(SolutionDir)Renderer\LoadShaders\include\GL3;$(SolutionDir)Renderer\LoadShaders;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)Renderer\glfw-3.2.1.bin.WIN64\lib-vc2015;$(SolutionDir)Renderer\LoadShaders\lib;$(LibraryPath)</LibraryPath>
-    <SourcePath>$(SolutionDir)Renderer\LoadShaders\lib;$(SourcePath)</SourcePath>
+    <IncludePath>$(SolutionDir)VehicleDynamicModel\Renderer\glfw-3.2.1.bin.WIN64\include\GLFW;$(SolutionDir)VehicleDynamicModel\Renderer\LoadShaders\include\GL;$(SolutionDir)VehicleDynamicModel\Renderer\LoadShaders\include\GL3;$(SolutionDir)VehicleDynamicModel\Renderer\LoadShaders;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)VehicleDynamicModel\Renderer\glfw-3.2.1.bin.WIN64\lib-vc2015;$(SolutionDir)VehicleDynamicModel\Renderer\LoadShaders\lib;$(LibraryPath)</LibraryPath>
+    <SourcePath>$(SolutionDir)VehicleDynamicModel\Renderer\LoadShaders\lib;$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -116,7 +116,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(SolutionDir)BulletPhysics\lib\Debug\Bullet2FileLoader_Debug.lib;$(SolutionDir)BulletPhysics\lib\Debug\Bullet3Collision_Debug.lib;$(SolutionDir)BulletPhysics\lib\Debug\Bullet3Common_Debug.lib;$(SolutionDir)BulletPhysics\lib\Debug\Bullet3Dynamics_Debug.lib;$(SolutionDir)BulletPhysics\lib\Debug\Bullet3Geometry_Debug.lib;$(SolutionDir)BulletPhysics\lib\Debug\Bullet3OpenCL_clew_Debug.lib;$(SolutionDir)BulletPhysics\lib\Debug\BulletSoftBody_Debug.lib;$(SolutionDir)BulletPhysics\lib\Debug\LinearMath_Debug.lib;$(SolutionDir)BulletPhysics\lib\Debug\BulletCollision_Debug.lib;$(SolutionDir)BulletPhysics\lib\Debug\BulletDynamics_Debug.lib;opengl32.lib;glu32.lib;$(SolutionDir)Renderer\OpenGLLibs\glew32.lib;glfw3dll.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(SolutionDir)BulletPhysics\lib\Debug\Bullet2FileLoader_Debug.lib;$(SolutionDir)BulletPhysics\lib\Debug\Bullet3Collision_Debug.lib;$(SolutionDir)BulletPhysics\lib\Debug\Bullet3Common_Debug.lib;$(SolutionDir)BulletPhysics\lib\Debug\Bullet3Dynamics_Debug.lib;$(SolutionDir)BulletPhysics\lib\Debug\Bullet3Geometry_Debug.lib;$(SolutionDir)BulletPhysics\lib\Debug\Bullet3OpenCL_clew_Debug.lib;$(SolutionDir)BulletPhysics\lib\Debug\BulletSoftBody_Debug.lib;$(SolutionDir)BulletPhysics\lib\Debug\LinearMath_Debug.lib;$(SolutionDir)BulletPhysics\lib\Debug\BulletCollision_Debug.lib;$(SolutionDir)BulletPhysics\lib\Debug\BulletDynamics_Debug.lib;opengl32.lib;glu32.lib;$(SolutionDir)VehicleDynamicModel\Renderer\OpenGLLibs\glew32.lib;glfw3dll.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)BulletPhysics\lib</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -159,20 +159,20 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\Renderer\LoadShaders\lib\LoadShaders.cpp" />
-    <ClCompile Include="..\Renderer\Renderer.cpp" />
     <ClCompile Include="..\tinyxml2\tinyxml2.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="OpenDriveDocument.cpp" />
+    <ClCompile Include="Renderer\LoadShaders\lib\LoadShaders.cpp" />
+    <ClCompile Include="Renderer\Renderer.cpp" />
     <ClCompile Include="VehicleDynamicModel.h" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Renderer\camera.h" />
     <ClInclude Include="..\Renderer\DebugDraw.h" />
-    <ClInclude Include="..\Renderer\LoadShaders\include\LoadShaders.h" />
-    <ClInclude Include="..\Renderer\Renderer.h" />
     <ClInclude Include="..\tinyxml2\tinyxml2.h" />
     <ClInclude Include="OpenDriveDocument.h" />
+    <ClInclude Include="Renderer\LoadShaders\include\LoadShaders.h" />
+    <ClInclude Include="Renderer\Renderer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -220,8 +220,8 @@ public:
 		camera.setForward(vec3(1, 0, 0));
 
 		ShaderInfo  RenderProgramSource[] = {
-			{ GL_VERTEX_SHADER,  "..\\Renderer\\VBOBenchmarkCommons\\Vertex.shader" },
-			{ GL_FRAGMENT_SHADER,"..\\Renderer\\VBOBenchmarkCommons\\Fragment.shader" },
+			{ GL_VERTEX_SHADER,  "Renderer\\VBOBenchmarkCommons\\Vertex.shader" },
+			{ GL_FRAGMENT_SHADER,"Renderer\\VBOBenchmarkCommons\\Fragment.shader" },
 			{ GL_NONE, NULL },
 			{ GL_NONE, NULL },
 			{ GL_NONE, NULL }

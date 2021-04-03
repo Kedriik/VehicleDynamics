@@ -5,7 +5,7 @@
 //////////////////////////////////////////////////////////////////////////////
 #include <cstdlib>
 #include <iostream>
-#include <Renderer/LoadShaders/include/LoadShaders.h>
+#include <include/LoadShaders.h>
 
 //#define GLEW_STATIC
 //#include <GL/glew.h>

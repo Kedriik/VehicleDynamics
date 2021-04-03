@@ -15,13 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\Renderer\LoadShaders\lib\LoadShaders.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="..\tinyxml2\tinyxml2.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\Renderer\Renderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp">
@@ -33,6 +27,12 @@
     <ClCompile Include="OpenDriveDocument.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Renderer\Renderer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Renderer\LoadShaders\lib\LoadShaders.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Renderer\camera.h">
@@ -41,16 +41,16 @@
     <ClInclude Include="..\Renderer\DebugDraw.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\Renderer\LoadShaders\include\LoadShaders.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\tinyxml2\tinyxml2.h">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\Renderer\Renderer.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="OpenDriveDocument.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\Renderer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\LoadShaders\include\LoadShaders.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

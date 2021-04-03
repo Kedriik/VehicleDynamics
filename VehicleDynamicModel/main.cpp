@@ -1,7 +1,7 @@
 #pragma once
 #include "../VehicleDynamicModel/VehicleDynamicModel/VehicleDynamicModel.h"
 #include "OpenDriveDocument.h"
-#include "../Renderer/Renderer.h"
+#include "Renderer/Renderer.h"
 
 
 int main(int argc, char** argv)
