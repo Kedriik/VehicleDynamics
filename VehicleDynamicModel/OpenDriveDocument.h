@@ -110,13 +110,13 @@ struct Successor {
 	}
 };
 struct Link {
-	Successor successor;
-	Predecessor predecessor;
-	Link(Successor _successor, Predecessor _predecessor)
-		:successor(_successor),predecessor(_predecessor)
+	std::optional<Successor> successor = std::optional<Successor>();
+	std::optional<Predecessor> predecessor = std::optional<Predecessor>();
+	Link()
 	{
 
 	}
+	
 	~Link() {
 
 	}

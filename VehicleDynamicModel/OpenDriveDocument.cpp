@@ -118,23 +118,26 @@ void OpenDriveDocument::populateGeometries(std::vector<Geometry*>& geometries, t
 
 Link OpenDriveDocument::createLink(tinyxml2::XMLElement* xml_road)
 {
-	tinyxml2::XMLElement* link = xml_road->FirstChildElement("link");
-	tinyxml2::XMLElement* xml_successor = link->FirstChildElement("successor");
-	tinyxml2::XMLElement* xml_predecessor = link->FirstChildElement("predecessor");
+	tinyxml2::XMLElement* xml_link = xml_road->FirstChildElement("link");
+	tinyxml2::XMLElement* xml_successor = xml_link->FirstChildElement("successor");
+	tinyxml2::XMLElement* xml_predecessor = xml_link->FirstChildElement("predecessor");
 	Successor successor;
 	Predecessor predecessor;
-	this->populateCessor(xml_successor,successor);
-	this->populateCessor(xml_predecessor,predecessor);
-	//if (xml_road->Attribute("rule") != NULL) {
-	//	std::string sroad_rule = std::string(xml_road->Attribute("rule"));
-	//};
-	//std::string 
-	return Link(successor, predecessor);
+	Link link;
+	if (xml_successor != NULL) {
+		this->populateCessor(xml_successor, successor);
+		link.successor = successor;
+	}
+	if(xml_predecessor != NULL){
+		this->populateCessor(xml_predecessor,predecessor);
+		link.predecessor = predecessor;
+	}
+	return link;
 }
 template<class T>
 void OpenDriveDocument::populateCessor(tinyxml2::XMLElement* xml_cessor, T& cessor)
 {
-	std::string sElementId, sElementType, sContactPoint, sElementS, sElementDir;
+	std::string sElementId, sElementType,sContactPoint, sElementS, sElementDir;
 
 	sElementId = std::string(xml_cessor->Attribute("elementId"));
 	sElementType = std::string(xml_cessor->Attribute("elementType"));
@@ -162,14 +165,16 @@ void OpenDriveDocument::populateCessor(tinyxml2::XMLElement* xml_cessor, T& cess
 	else {
 		throw "Unexpected value";
 	}
-	if (sContactPoint == "start") {
-		cessor.contactPoint = ContactPoint::start;
-	}
-	else if (sContactPoint == "end") {
-		cessor.contactPoint = ContactPoint::end;
-	}
-	else {
-		throw "Unexpected value";
+	if(sContactPoint != ""){
+		if (sContactPoint == "start") {
+			cessor.contactPoint = ContactPoint::start;
+		}
+		else if (sContactPoint == "end") {
+			cessor.contactPoint = ContactPoint::end;
+		}
+		else {
+			throw "Unexpected value";
+		}
 	}
 }
 
