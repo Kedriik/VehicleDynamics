@@ -26,7 +26,6 @@ public:
 		return sin(t * t);
 	}
 };
-
 template<typename T>
 T trapezoidalIntegral(std::function<double (double)> f, T a, T b, int n) {
 	T h = (b - a) / n;
@@ -112,27 +111,40 @@ struct Successor {
 struct Link {
 	std::optional<Successor> successor = std::optional<Successor>();
 	std::optional<Predecessor> predecessor = std::optional<Predecessor>();
-	Link()
-	{
-
-	}
-	
-	~Link() {
-
-	}
 };
 enum class CountryCode {
 	PL = 0,
 	DE = 1
 };
+enum class SpeedUnit {
+	mps  = 0,   //m/s
+	mph  = 1,    
+	kmph = 2  //km/h
+};
+enum class DistanceUnit {
+	m,km,ft,mile
+};
+enum class MassUnit {
+	kg, t
+};
+enum class Slope {
+	percent
+};
+struct Speed {
+	std::string maxSpeed;
+	SpeedUnit speedUnit;
+	Speed(std::string _maxSpeed = "undefined",SpeedUnit _speedUnit = SpeedUnit::kmph):
+	maxSpeed(_maxSpeed),speedUnit(_speedUnit){}
+};
 struct Type {
 	double s;
 	std::string type;
 	std::optional<CountryCode> countryCode;
-	Type(double _s,std::string _type, std::optional<CountryCode> _countryCode = std::optional<CountryCode>())
-		:s(_s),type(_type),countryCode(_countryCode) {
-
-	}
+	std::optional<Speed> speed;
+	Type(double _s,std::string _type, 
+		std::optional<CountryCode> _countryCode = std::optional<CountryCode>(),
+		std::optional<Speed> _speed = std::optional<Speed>())
+		:s(_s),type(_type),countryCode(_countryCode),speed(_speed) {}
 };
 struct Lane {
 	Lane() {
@@ -174,13 +186,39 @@ struct Surface {
 
 	}
 };
+struct Shape {
+	double s, t, a, b, c, d;
+	Shape(double _s, double _t, double _a, double _b, double _c, double _d) :
+		t(_t),a(_a), b(_b), c(_c), d(_d) {
+		if (_s < 0) throw "s value cannot be negative!";
+		s = _s;
+	}
+};
+struct Superelevation {
+	double s, a, b, c, d;
+	Superelevation(double _s, double _a, double _b, double _c, double _d) :
+		a(_a), b(_b), c(_c), d(_d) {
+		if (_s < 0) throw "s value cannot be negative!";
+		s = _s;
+	}
+};
+struct LateralProfile {
+	std::vector<Shape> shapes;
+	std::vector<Superelevation> superelevations;
+	LateralProfile(std::vector<Shape> _shapes, std::vector<Superelevation> _superelevations) :
+		shapes(_shapes), superelevations(_superelevations) {}
+};
+struct Elevation {
+	double s, a, b, c, d;
+	Elevation(double _s, double _a, double _b, double _c, double _d):
+	a(_a),b(_b),c(_c),d(_d){
+		if (_s < 0) throw "s value cannot be negative!";
+		s = _s;
+	}
+};
 struct ElevationProfile {
-	ElevationProfile() {
-
-	}
-	~ElevationProfile() {
-
-	}
+	std::vector<Elevation> elevations;
+	ElevationProfile(std::vector<Elevation> _elevations):elevations(_elevations){}
 };
 struct Geometry {
 	Geometry(double _s, double _x, double _y, double _hdg, double _length) :
@@ -393,7 +431,6 @@ public:
 		}
 	}
 };
-
 struct arc:Geometry {
 	arc(double _curvature, double _s, double _x, double _y, double _hdg, double _length) :
 		curvature(_curvature), Geometry(_s, _x, _y, _hdg, _length) {
@@ -412,7 +449,6 @@ struct arc:Geometry {
 		}
 	}
 };
-
 struct poly3 :Geometry {
 	poly3(double _a, double _b, double _c, double _d, double _s, double _x, double _y, double _hdg, double _length) :
 		a(_a), b(_b), c(_c), d(_d), Geometry(_s, _x, _y, _hdg, _length) {
@@ -450,6 +486,8 @@ class Road {
 private:
 	std::optional<std::string> name;
 	std::optional<TrafficRule> rule;
+	std::optional<LateralProfile> lateralProfile;
+	std::optional<ElevationProfile> elevationProfile;
 	double length;
 	std::string id;
 	std::string junction;
@@ -459,9 +497,10 @@ private:
 public:
 	Road(double _length, std::string _id, std::string _junction, 
 		std::optional<std::string> _name,std::optional<TrafficRule> _rule, PlanView _planView,
-	Link _link, std::vector<Type> _types):
+	Link _link, std::vector<Type> _types, std::optional<LateralProfile> _lateralProfile = std::optional<LateralProfile>(),
+	std::optional<ElevationProfile> _elevationProfile = std::optional<ElevationProfile>()):
 	length(_length),id(_id),junction(_junction),name(_name),rule(_rule),planView(_planView),
-	link(_link),types(_types)
+	link(_link),types(_types),lateralProfile(_lateralProfile),elevationProfile(_elevationProfile)
 	{
 
 	}
@@ -472,18 +511,20 @@ public:
 		return this->planView;
 	}
 };
-
 class OpenDriveDocument
 {
 private:
-	
 	std::vector<Road> roads;
 	tinyxml2::XMLDocument doc;
-	void populateGeometries(std::vector<Geometry*>& geometries, tinyxml2::XMLElement* xml_road);
+	
 	Link createLink(tinyxml2::XMLElement* xml_road);
 	template <class T>
 	void populateCessor(tinyxml2::XMLElement* xml_cessor, T& cessor);
+	void populateGeometries(tinyxml2::XMLElement* xml_road, std::vector<Geometry*>& geometries);
 	void populateTypes(tinyxml2::XMLElement* xml_road, std::vector<Type> &types);
+	void populateSuperelevations(tinyxml2::XMLElement* xml_road, std::vector<Superelevation>& sueperelevations);
+	void populateShapes(tinyxml2::XMLElement* xml_road, std::vector<Shape>& shapes);
+	void populateElevations(tinyxml2::XMLElement* xml_road, std::vector<Elevation>& elevations);
 public:
 	OpenDriveDocument(std::string filePath);
 	void generateReferenceLines();
