@@ -6,11 +6,9 @@
 #include <stdio.h>
 #include <optional>
 #include "Renderer/glm/glm/glm.hpp"
-
 #include <vector>
 #include <math.h>
 #include <algorithm>
-//#include "..\Renderer\glm\gtx\transform.hpp"
 #include "Renderer/glm/glm/gtx/transform.hpp"
 #include "Renderer/glm/glm/gtc/matrix_transform.hpp"
 #include "Renderer/glm/glm/gtc/quaternion.hpp"
@@ -217,8 +215,21 @@ struct Elevation {
 	}
 };
 struct ElevationProfile {
+private:
 	std::vector<Elevation> elevations;
+public:
 	ElevationProfile(std::vector<Elevation> _elevations):elevations(_elevations){}
+	ElevationProfile(){}
+	Elevation getCurrentElevation(double s) {
+		int i = 0;
+		int current = -1;
+		for (i = 0; i < this->elevations.size(); i++) {
+			if (s >= this->elevations.at(i).s) current = i;
+			else break;
+		}
+		if (current >= 0) return this->elevations.at(current);
+		return Elevation(0, 0, 0, 0, 0);
+	}
 };
 struct Geometry {
 	Geometry(double _s, double _x, double _y, double _hdg, double _length) :
@@ -494,6 +505,30 @@ private:
 	PlanView planView;
 	Link link;
 	std::vector<Type> types;
+	std::vector<glm::dvec4> referenceLinePoints;
+	void generateReferenceLineCoordinates() {  
+		ElevationProfile ep = this->elevationProfile.value_or(ElevationProfile());
+		for (int i = 0; i < this->planView.geometries.size(); i++) {
+			double ds = 0;
+			Geometry* g = this->planView.geometries.at(i);
+			g->generateReferenceLine();
+			std::vector<glm::dvec4> referenceLineCoordinates = g->vertices;
+			double step_ds = g->length / referenceLineCoordinates.size();
+			for (int j = 0; j < referenceLineCoordinates.size(); j++) {
+				double s = g->s + j * step_ds;
+				glm::dvec4 pos = referenceLineCoordinates.at(j);
+				if (this->id == "2") {
+					std::string d = "Hello";
+				}
+				Elevation elevation = ep.getCurrentElevation(s);
+					//a + b*ds + c*ds² + d*ds³
+				double ds = s-elevation.s;
+				pos.z = elevation.a + elevation.b*ds + elevation.c*std::pow(ds,2)+elevation.d*std::pow(ds, 3);
+				referenceLinePoints.push_back(pos);
+			}
+		}
+	}
+
 public:
 	Road(double _length, std::string _id, std::string _junction, 
 		std::optional<std::string> _name,std::optional<TrafficRule> _rule, PlanView _planView,
@@ -510,6 +545,15 @@ public:
 	PlanView getPlanView() {
 		return this->planView;
 	}
+	std::vector<glm::dvec4> getReferencePoints() {
+		return this->referenceLinePoints;
+	}
+/*	void generate3DReferenceLine() {
+		for (int j = 0; j < r.planView.geometries.size(); j++) {
+			Geometry* g = r.planView.geometries.at(j);
+			g->generateReferenceLine();
+		}
+	}*/
 };
 class OpenDriveDocument
 {

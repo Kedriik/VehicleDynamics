@@ -7,18 +7,12 @@ OpenDriveDocument::OpenDriveDocument(std::string filePath) {
 }
 void OpenDriveDocument::generateReferenceLines() {
 	for (int i = 0; i < this->roads.size(); i++) {
-		Road r = roads.at(i);
-		for (int j = 0; j < r.planView.geometries.size(); j++) {
-			Geometry* g = r.planView.geometries.at(j);
-			g->generateReferenceLine();
-		}
-
+		roads.at(i).generateReferenceLineCoordinates();
 	}
 }
 std::vector<Road> OpenDriveDocument::getRoads() {
 	return this->roads;
 }
-
 int OpenDriveDocument::parseOpenDriveDocument(tinyxml2::XMLDocument& doc) {
 	tinyxml2::XMLElement* xml_road = doc.FirstChildElement()->FirstChildElement("road");
 	double road_length;
@@ -89,6 +83,7 @@ void OpenDriveDocument::populateTypes(tinyxml2::XMLElement* xml_road, std::vecto
 void OpenDriveDocument::populateSuperelevations(tinyxml2::XMLElement* xml_road, std::vector<Superelevation>& superelevations)
 {
 	tinyxml2::XMLElement* xml_lateralProfile = xml_road->FirstChildElement("lateralProfile");
+	if (xml_lateralProfile == nullptr) return;
 	tinyxml2::XMLElement* xml_superElevation = xml_lateralProfile->FirstChildElement("superelevation");
 	while (xml_superElevation != nullptr) {
 		double s, a, b, c, d;
@@ -105,6 +100,7 @@ void OpenDriveDocument::populateSuperelevations(tinyxml2::XMLElement* xml_road, 
 void OpenDriveDocument::populateShapes(tinyxml2::XMLElement* xml_road, std::vector<Shape>& shapes)
 {
 	tinyxml2::XMLElement* xml_lateralProfile = xml_road->FirstChildElement("lateralProfile");
+	if (xml_lateralProfile == nullptr) return;
 	tinyxml2::XMLElement* xml_shape = xml_lateralProfile->FirstChildElement("shape");
 	while (xml_shape != nullptr) {
 		double s,t, a, b, c, d;
@@ -121,8 +117,9 @@ void OpenDriveDocument::populateShapes(tinyxml2::XMLElement* xml_road, std::vect
 }
 void OpenDriveDocument::populateElevations(tinyxml2::XMLElement* xml_road, std::vector<Elevation>& elevations)
 {
-	tinyxml2::XMLElement* xml_lateralProfile = xml_road->FirstChildElement("elevationProfile");
-	tinyxml2::XMLElement* xml_elevation = xml_lateralProfile->FirstChildElement("elevation");
+	tinyxml2::XMLElement* xml_elevationProfile = xml_road->FirstChildElement("elevationProfile");
+	if (xml_elevationProfile == nullptr) return;
+	tinyxml2::XMLElement* xml_elevation = xml_elevationProfile->FirstChildElement("elevation");
 	while (xml_elevation != nullptr) {
 		double s, a, b, c, d;
 		if (xml_elevation->QueryDoubleAttribute("s", &s) != tinyxml2::XMLError::XML_SUCCESS) throw "Something wrong with superelevation";
@@ -170,7 +167,6 @@ void OpenDriveDocument::populateGeometries(tinyxml2::XMLElement* xml_road, std::
 		geometry = geometry->NextSiblingElement("geometry");
 	}
 }
-
 Link OpenDriveDocument::createLink(tinyxml2::XMLElement* xml_road)
 {
 	tinyxml2::XMLElement* xml_link = xml_road->FirstChildElement("link");

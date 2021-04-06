@@ -18,6 +18,7 @@ int main(int argc, char** argv)
 		generate_gaps = int(argv[2]);
 	}
 	OpenDriveDocument odd = OpenDriveDocument(openDriveFilePath);
+	
 	odd.generateReferenceLines();
 	
 	Renderer renderer;
@@ -27,12 +28,12 @@ int main(int argc, char** argv)
 	
 	for (int i = 0; i < odd.getRoads().size(); i++) {
 		Road r = odd.getRoads().at(i);
-		for (int j = 0; j < r.getPlanView().geometries.size(); j++) {
-			Geometry* g = r.getPlanView().geometries.at(j);
-			VerticesObject * obj = new VerticesObject(g->vertices, GL_LINE_STRIP);
+		//for (int j = 0; j < r.getPlanView().geometries.size(); j++) {
+		//	Geometry* g = r.getPlanView().geometries.at(j);
+			VerticesObject * obj = new VerticesObject(r.getReferencePoints(), GL_LINE_STRIP);
 			obj->generateVBO();
 			verticesObjects.push_back(obj);
-		}
+		//}
 
 	}
 	double gap = 5.0;

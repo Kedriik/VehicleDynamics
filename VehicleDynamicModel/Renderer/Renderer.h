@@ -214,7 +214,7 @@ public:
 
 		vec3 camPos = vec3(0, 15.1211f, 0); vec3(51.2, 250, 51.2);
 		camera = Camera(window, width, height, camPos, vec3(0, -1, 0.0), vec3(1, 0, 0), 0.01);
-		camera.setSens(0.1f, 1000.1f);
+		camera.setSens(0.01f, 100.1f);
 		camera.setPosition(vec3(-20, 10, 0));
 		camera.setUp(vec3(0, 1, 0));
 		camera.setForward(vec3(1, 0, 0));
@@ -285,9 +285,12 @@ public:
 		double loopTotalTime = 0;
 		double deltaTime = 0;
 		double stallTime = 1.0;
-		camera.setPosition(vec3(0, 0, 200));
-		camera.setUp(vec3(0, 1, 0));
-		camera.setForward(vec3(0, 0, -1));
+		//camera.setPosition(vec3(0, 0, 200));
+		//camera.setUp(vec3(0, 1, 0));
+		//camera.setForward(vec3(0, 0, -1));
+		camera.setPosition(vec3(200, 200, 0));
+		camera.setUp(vec3(0, 0, 1));
+		camera.setForward(vec3(-1, 0, 0));
 		ViewMatrix = camera.cameraPositionKeyboard(0);
 		this->initLoopObjects();
 		GLuint drawMode = GL_FILL;
@@ -302,7 +305,7 @@ public:
 			this->updateLoopObjects();
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			glPointSize(10.0f);
-			ViewMatrix = camera.cameraPositionKeyboard(0.001);
+			ViewMatrix = camera.cameraPositionKeyboard(deltaTime);
 			GLuint drawMode = GL_LINE;
 			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);

@@ -16,6 +16,7 @@ private:
 	mat4 viewMatrix;
 	float windowHeight, windowWidth;
 	vec3 LookAt;
+	float sensTransMultiplier = 1;
 public:
 vec4 someStorage = vec4(0.0f);
 Camera()
@@ -157,8 +158,10 @@ void updateCamera(float rotX, float rotY, float rotZ,float X, float Y, float Z, 
 glm::mat4 cameraPositionKeyboard(double deltaTime) 
 {
 	float xrot=0,yrot=0,zrot=0,x=0,y=0,z=0;
-	
-	
+	this->sensTransMultiplier = 1;
+
+	if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
+		this->sensTransMultiplier = 10;
 	if (glfwGetKey( window, GLFW_KEY_Q ) == GLFW_PRESS) 
 		zrot=1;
 	
@@ -183,45 +186,45 @@ glm::mat4 cameraPositionKeyboard(double deltaTime)
 	
 	if (glfwGetKey( window, GLFW_KEY_I ) == GLFW_PRESS) 
 	{
-		x+=forward.x;
-		y+=forward.y;
-		z+=forward.z;
+		x+= this->sensTransMultiplier * forward.x;
+		y+= this->sensTransMultiplier * forward.y;
+		z+= this->sensTransMultiplier * forward.z;
 	}
 
 	if (glfwGetKey( window, GLFW_KEY_K ) == GLFW_PRESS) 
 	{
-		x-=forward.x;
-		y-=forward.y;
-		z-=forward.z;
+		x-= this->sensTransMultiplier * forward.x;
+		y-= this->sensTransMultiplier * forward.y;
+		z-= this->sensTransMultiplier * forward.z;
 	}
 
 	if (glfwGetKey( window, GLFW_KEY_J ) == GLFW_PRESS) 
 	{
-		x-=right.x;
-		y-=right.y;
-		z-=right.z;
+		x-= this->sensTransMultiplier * right.x;
+		y-= this->sensTransMultiplier * right.y;
+		z-= this->sensTransMultiplier * right.z;
 	}
 
 
 	if (glfwGetKey( window, GLFW_KEY_L ) == GLFW_PRESS) 
 	{
-		x+=right.x;
-		y+=right.y;
-		z+=right.z;
+		x+= this->sensTransMultiplier * right.x;
+		y+= this->sensTransMultiplier * right.y;
+		z+= this->sensTransMultiplier * right.z;
 	}
 
 	if (glfwGetKey( window, GLFW_KEY_U ) == GLFW_PRESS) 
 	{
-		x-=up.x;
-		y-=up.y;
-		z-=up.z;
+		x-= this->sensTransMultiplier * up.x;
+		y-= this->sensTransMultiplier * up.y;
+		z-= this->sensTransMultiplier * up.z;
 	}
 
 	if (glfwGetKey( window, GLFW_KEY_O ) == GLFW_PRESS) 
 	{
-		x+=up.x;
-		y+=up.y;
-		z+=up.z;
+		x+= this->sensTransMultiplier * up.x;
+		y+= this->sensTransMultiplier * up.y;
+		z+= this->sensTransMultiplier * up.z;
 	}
 	
 	updateCamera(xrot,yrot,zrot,x,y,z,deltaTime);
