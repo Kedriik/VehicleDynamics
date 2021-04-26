@@ -3,7 +3,6 @@
 OpenDriveDocument::OpenDriveDocument(std::string filePath) {
 	std::ifstream myfile;
 	doc.LoadFile(filePath.c_str());
-	this->parseOpenDriveDocument(this->doc);
 }
 void OpenDriveDocument::generateReferenceLines() {
 	for (int i = 0; i < this->roads.size(); i++) {
@@ -13,8 +12,8 @@ void OpenDriveDocument::generateReferenceLines() {
 std::vector<Road> OpenDriveDocument::getRoads() {
 	return this->roads;
 }
-int OpenDriveDocument::parseOpenDriveDocument(tinyxml2::XMLDocument& doc) {
-	tinyxml2::XMLElement* xml_road = doc.FirstChildElement()->FirstChildElement("road");
+int OpenDriveDocument::parseOpenDriveDocument() {
+	tinyxml2::XMLElement* xml_road = this->doc.FirstChildElement()->FirstChildElement("road");
 	double road_length;
 	std::string road_id, road_junction;
 	std::optional<std::string> road_name;
@@ -37,6 +36,8 @@ int OpenDriveDocument::parseOpenDriveDocument(tinyxml2::XMLDocument& doc) {
 		std::vector<Elevation> elevations;
 		std::vector<Superelevation> superelevations;
 		std::vector<Shape> shapes;
+		std::vector<LaneSection> laneSections;
+		
 		this->populateGeometries(xml_road,geometries);
 		PlanView planView = PlanView(geometries);
 		Link link = this->createLink(xml_road);
@@ -44,9 +45,12 @@ int OpenDriveDocument::parseOpenDriveDocument(tinyxml2::XMLDocument& doc) {
 		this->populateElevations(xml_road, elevations);
 		this->populateSuperelevations(xml_road, superelevations);
 		this->populateShapes(xml_road, shapes);
+		this->populateLaneSections(xml_road, laneSections);
+		lanes roadLanes = lanes(laneSections);
 		ElevationProfile elevationProfile(elevations);
 		LateralProfile lateralProfile(shapes, superelevations);
-		Road road(road_length, road_id, road_junction, road_name, road_rule, planView, link, types,lateralProfile, elevationProfile);
+		Road road(road_length, road_id, road_junction, road_name, road_rule, planView, link, types,
+			roadLanes,lateralProfile, elevationProfile);
 		this->roads.push_back(road);
 		xml_road = xml_road->NextSiblingElement("road");
 	}
@@ -78,7 +82,6 @@ void OpenDriveDocument::populateTypes(tinyxml2::XMLElement* xml_road, std::vecto
 		types.push_back(t);
 		xml_type = xml_type->NextSiblingElement("type");
 	}
-	
 }
 void OpenDriveDocument::populateSuperelevations(tinyxml2::XMLElement* xml_road, std::vector<Superelevation>& superelevations)
 {
@@ -131,6 +134,103 @@ void OpenDriveDocument::populateElevations(tinyxml2::XMLElement* xml_road, std::
 		elevations.push_back(elevation);
 		xml_elevation = xml_elevation->NextSiblingElement("elevation");
 	}
+}
+void OpenDriveDocument::populateLaneSections(tinyxml2::XMLElement* xml_road, std::vector<LaneSection>& laneSections)
+{
+	tinyxml2::XMLElement* xml_lanes = xml_road->FirstChildElement("lanes");
+	if (xml_lanes == nullptr) return;
+	tinyxml2::XMLElement* xml_lanesection = xml_lanes->FirstChildElement("laneSection");
+	while (xml_lanesection != nullptr) {
+		double s;
+		bool singleSide;
+		if (xml_lanesection->QueryDoubleAttribute("s", &s) != tinyxml2::XMLError::XML_SUCCESS) throw "Something wrong with 's' in lane section";
+		xml_lanesection->QueryBoolAttribute("singleSide", &singleSide);
+		tinyxml2::XMLElement* xml_center = xml_lanesection->FirstChildElement("center");
+		std::vector<Lanes::Lane> lanes;
+		if (xml_center == nullptr) throw "No center lane in lane section";
+		else {
+			tinyxml2::XMLElement* xml_lane = xml_center->FirstChildElement("lane");
+			
+			while (xml_lane != nullptr) {
+				Lanes::Lane lane;
+				this->populateLane(xml_lane, lane);
+				lanes.push_back(lane);
+				xml_lane = xml_lane->NextSiblingElement("lane");
+			}
+			
+		}
+		Lanes::Center center = Lanes::Center(lanes);
+		std::optional<Lanes::Right> _right;
+		std::optional<Lanes::Left> _left;
+		tinyxml2::XMLElement* xml_left = xml_lanesection->FirstChildElement("left");
+		if(xml_left != nullptr){
+			tinyxml2::XMLElement* xml_lane = xml_left->FirstChildElement("lane");
+			lanes.clear();
+			while (xml_lane != nullptr) {
+				Lanes::Lane lane;
+				this->populateLane(xml_lane, lane);
+				lanes.push_back(lane);
+				xml_lane = xml_lane->NextSiblingElement("lane");
+			}
+			Lanes::Left left = Lanes::Left(lanes);
+			_left = std::optional<Lanes::Left>(left);
+		}
+		tinyxml2::XMLElement* xml_right = xml_lanesection->FirstChildElement("right");
+		if(xml_right!=nullptr){
+		tinyxml2::XMLElement* xml_lane = xml_right->FirstChildElement("lane");
+		lanes.clear();
+		while (xml_lane != nullptr) {
+				Lanes::Lane lane;
+				this->populateLane(xml_lane, lane);
+				lanes.push_back(lane);
+				xml_lane = xml_lane->NextSiblingElement("lane");
+			}
+			Lanes::Right right = Lanes::Right(lanes);
+			_right = std::optional<Lanes::Right>(right);
+		}
+		LaneSection laneSection = LaneSection(s, std::optional<bool>(singleSide), center,_right,_left);
+		laneSections.push_back(laneSection);
+		xml_lanesection = xml_lanesection->NextSiblingElement("laneSection");
+		
+	}
+}
+void OpenDriveDocument::populateLane(tinyxml2::XMLElement* xml_lane, Lanes::Lane& lane)
+{
+	/*Lanes::Type type;
+	Lanes::Height height;
+	Lanes::LaneGeometry laneGeometry;*/
+	bool level;
+	int id;
+	std::string type;
+	xml_lane->QueryBoolAttribute("level", &level);
+	xml_lane->QueryIntAttribute("id", &id);
+	type = xml_lane->Attribute("type");
+	lane.id = id;
+	lane.level = std::optional<bool>(level);
+	//
+	//if (xml_lane->QueryDoubleAttribute("s", &s) != tinyxml2::XMLError::XML_SUCCESS) throw "Something wrong with 's' in lane section";
+	Lanes::Link link;
+	std::vector<Lanes::Height> heights;
+	tinyxml2::XMLElement* xml_width = xml_lane->FirstChildElement("width");
+	tinyxml2::XMLElement* xml_roadMark = xml_lane->FirstChildElement("roadMark");
+	std::vector<Lanes::Width> widths;
+	std::vector<Lanes::Border> borders;
+	while (xml_width != nullptr) { 
+		Lanes::Width width;
+		this->populateGenericPolynomialTag(xml_width, width);
+		widths.push_back(width);
+		
+		xml_width = xml_width->NextSiblingElement("width");
+	}
+	Lanes::LaneGeometry laneGeometry = Lanes::LaneGeometry(borders, widths);
+	
+	lane.laneGeometry = laneGeometry;
+	while (xml_roadMark != nullptr) {
+		xml_roadMark = xml_roadMark->NextSiblingElement("roadMark");
+	}
+}
+void OpenDriveDocument::switchLaneType(std::string s_type, Lanes::Type &type)
+{
 }
 void OpenDriveDocument::populateGeometries(tinyxml2::XMLElement* xml_road, std::vector<Geometry*>& geometries)
 {
@@ -226,6 +326,35 @@ void OpenDriveDocument::populateCessor(tinyxml2::XMLElement* xml_cessor, T& cess
 		else {
 			throw "Unexpected value";
 		}
+	}
+}
+
+template<class T>
+void OpenDriveDocument::populateGenericPolynomialTag(tinyxml2::XMLElement* xml_tag, T& polynomialStruct)
+{
+	double sOffset, a, b, c, d;
+	if (xml_tag->QueryDoubleAttribute("sOffset", &sOffset) != tinyxml2::XMLError::XML_SUCCESS) throw "Something wrong in populateGenericPolynomialTag";
+	if (xml_tag->QueryDoubleAttribute("a", &a) != tinyxml2::XMLError::XML_SUCCESS) throw "Something wrong in populateGenericPolynomialTag";
+	if (xml_tag->QueryDoubleAttribute("b", &b) != tinyxml2::XMLError::XML_SUCCESS) throw "Something wrong in populateGenericPolynomialTag";
+	if (xml_tag->QueryDoubleAttribute("c", &c) != tinyxml2::XMLError::XML_SUCCESS) throw "Something wrong in populateGenericPolynomialTag";
+	if (xml_tag->QueryDoubleAttribute("d", &d) != tinyxml2::XMLError::XML_SUCCESS) throw "Something wrong in populateGenericPolynomialTag";
+
+	polynomialStruct.sOffset = sOffset;
+	polynomialStruct.a = a;
+	polynomialStruct.b = b;
+	polynomialStruct.c = c;
+	polynomialStruct.d = d;
+}
+
+template<class T>
+void OpenDriveDocument::populateGenericPolynomialTags(tinyxml2::XMLElement* xml_tag, std::string childTagName, std::vector<T>& polynomialStructs)
+{
+	tinyxml2::XMLElement* xml_child_tag = xml_tag->FirstChildElement(childTagName.c_str());
+	while (xml_child_tag != nullptr) {
+			T polynomialStruct;
+			this->populateGenericPolynomialTag(xml_tag, polynomialStruct);
+			polynomialStructs.push_back(polynomialStruct);
+			xml_child_tag = xml_child_tag->NextSiblingElement(childTagName.c_str());
 	}
 }
 

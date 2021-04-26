@@ -2,6 +2,7 @@
 #include "../VehicleDynamicModel/VehicleDynamicModel/VehicleDynamicModel.h"
 #include "OpenDriveDocument.h"
 #include "Renderer/Renderer.h"
+#include <exception>
 
 
 int main(int argc, char** argv)
@@ -18,8 +19,17 @@ int main(int argc, char** argv)
 		generate_gaps = int(argv[2]);
 	}
 	OpenDriveDocument odd = OpenDriveDocument(openDriveFilePath);
+	try {
+		odd.parseOpenDriveDocument();
+		//odd.generateReferenceLines();
+		odd.generateRoads();
+	}
+	catch (std::exception e)
+	{
+		std::cerr << "Error: " << e.what() << std::endl;
+		return -1;
+	}
 	
-	odd.generateReferenceLines();
 	
 	Renderer renderer;
 	renderer.init(1500, 1000);
@@ -32,10 +42,15 @@ int main(int argc, char** argv)
 		//	Geometry* g = r.getPlanView().geometries.at(j);
 			VerticesObject * obj = new VerticesObject(r.getReferencePoints(), GL_LINE_STRIP);
 			obj->generateVBO();
+			VerticesObject* dobj = new VerticesObject(r.debugLinesVertices, GL_POINTS);
+			dobj->generateVBO();
 			verticesObjects.push_back(obj);
+			verticesObjects.push_back(dobj);
 		//}
 
 	}
+	
+
 	double gap = 5.0;
 	
 	if(generate_gaps){

@@ -15,6 +15,8 @@
 #include "Renderer/glm/glm/gtx/quaternion.hpp"
 #include <iostream>
 #include <functional>
+#include <exception>
+#define GLM_SWIZZLE
 class OpenDriveMath {
 public:
 	double static fx(double t) {
@@ -36,7 +38,7 @@ T trapezoidalIntegral(std::function<double (double)> f, T a, T b, int n) {
 }
 class XMLDocument;
 class XMLElement;
-enum XMLError;
+//enum XMLError;
 class XMLText;
 struct header {
 	header(int _revMajor, int _revMinor, std::optional<std::string> _name = std::optional<std::string>(),
@@ -188,7 +190,7 @@ struct Shape {
 	double s, t, a, b, c, d;
 	Shape(double _s, double _t, double _a, double _b, double _c, double _d) :
 		t(_t),a(_a), b(_b), c(_c), d(_d) {
-		if (_s < 0) throw "s value cannot be negative!";
+		if (_s < 0) throw new std::exception("s value cannot be negative!");
 		s = _s;
 	}
 };
@@ -196,46 +198,81 @@ struct Superelevation {
 	double s, a, b, c, d;
 	Superelevation(double _s, double _a, double _b, double _c, double _d) :
 		a(_a), b(_b), c(_c), d(_d) {
-		if (_s < 0) throw "s value cannot be negative!";
+		if (_s < 0) throw new std::exception("s value cannot be negative!");
 		s = _s;
 	}
 };
-struct LateralProfile {
+struct SBasedProperty {
+
+	template <class T>
+	T getCurrentProp(double s, std::vector<T> sBasedProperty, T defaultProp) {
+		int i = 0;
+		int current = -1;
+		for (i = 0; i < sBasedProperty.size(); i++) {
+			if (s >= sBasedProperty.at(i).s) current = i;
+			else break;
+		}
+		if (current >= 0)
+			return sBasedProperty.at(current);
+		return defaultProp;
+	}
+	template <class T>
+	T getCurrentPropSOffset(double sOffset, std::vector<T> sBasedProperty, T defaultProp) {
+		int i = 0;
+		int current = -1;
+		for (i = 0; i < sBasedProperty.size(); i++) {
+			if (sOffset >= sBasedProperty.at(i).sOffset) current = i;
+			else break;
+		}
+		if (current >= 0)
+			return sBasedProperty.at(current);
+		return defaultProp;
+	}
+};
+struct LateralProfile:SBasedProperty {
 	std::vector<Shape> shapes;
 	std::vector<Superelevation> superelevations;
 	LateralProfile(std::vector<Shape> _shapes, std::vector<Superelevation> _superelevations) :
 		shapes(_shapes), superelevations(_superelevations) {}
+	LateralProfile(){}
+	Superelevation getCurrentSuperelevation(double s) {
+		Superelevation defaultSuperelevation(0, 0, 0, 0, 0);
+		return this->getCurrentProp(s, this->superelevations, defaultSuperelevation);
+		/*int i = 0;
+		int current = -1;
+		for (i = 0; i < this->superelevations.size(); i++) {
+			if (s >= this->superelevations.at(i).s) current = i;
+			else break;
+		}
+		if (current >= 0)
+			return this->superelevations.at(current);
+		return Superelevation(0, 0, 0, 0, 0);*/
+	}
 };
 struct Elevation {
 	double s, a, b, c, d;
 	Elevation(double _s, double _a, double _b, double _c, double _d):
 	a(_a),b(_b),c(_c),d(_d){
-		if (_s < 0) throw "s value cannot be negative!";
+		if (_s < 0) throw new std::exception("s value cannot be negative!");
 		s = _s;
 	}
 };
-struct ElevationProfile {
+struct ElevationProfile:SBasedProperty {
 private:
 	std::vector<Elevation> elevations;
 public:
 	ElevationProfile(std::vector<Elevation> _elevations):elevations(_elevations){}
 	ElevationProfile(){}
 	Elevation getCurrentElevation(double s) {
-		int i = 0;
-		int current = -1;
-		for (i = 0; i < this->elevations.size(); i++) {
-			if (s >= this->elevations.at(i).s) current = i;
-			else break;
-		}
-		if (current >= 0) return this->elevations.at(current);
-		return Elevation(0, 0, 0, 0, 0);
+		Elevation defaultElevation(0, 0, 0, 0, 0);
+		return this->getCurrentProp(s, this->elevations, defaultElevation);
 	}
 };
 struct Geometry {
 	Geometry(double _s, double _x, double _y, double _hdg, double _length) :
 		x(_x), y(_y), hdg(_hdg) {
-		if (_s < 0) throw "s value cannot be negative";
-		if (_length < 0) throw "length cannot be negative";
+		if (_s < 0) throw new std::exception("s value cannot be negative");
+		if (_length < 0) throw new std::exception("length cannot be negative");
 		s = _s;
 		length = _length;
 	}
@@ -473,7 +510,7 @@ struct paramPoly3 :Geometry {
 	paramPoly3(double _aU, double _bU, double _cU, double _dU, double _aV, double _bV, double _cV, double _dV, std::string _pRange
 		, double _s, double _x, double _y, double _hdg, double _length) :aU(_aU), bU(_bU), cU(_cU), dU(_dU),
 		aV(_aV), bV(_bV), cV(_cV), dV(_dV), Geometry(_s, _x, _y, _hdg, _length) {
-		if (_pRange != "arcLength" || _pRange != "normalized") throw "Unknow value for pRange:" + _pRange;
+		if (_pRange != "arcLength" || _pRange != "normalized") throw new std::exception("Unknow value for pRange:");// +_pRange);
 		pRange = _pRange;
 		n_vertices = 100;
 	}
@@ -492,22 +529,252 @@ struct PlanView {
 
 	}
 };
+namespace Lanes {
+	enum class Rule {
+		NoPassing,
+		Caution,
+		none,
+	};
+	enum class Type {
+		shoulder,
+		border,
+		driving,
+		stop,
+		none,
+		restricted,
+		parking,
+		median,
+		biking,
+		sidewalk,
+		curb,
+		exit,
+		entry,
+		onramp,
+		offRamp,
+		connectingRamp
+	};
+	struct Height {
+		double sOffset=0, inner=0, outer=0;
+		Height(double _sOffset, double _inner, double _outer) :sOffset(_sOffset), inner(_inner), outer(_outer) {
+			if (this->sOffset < 0) throw new std::exception("sOffset cannot be negative.");
+		}
+		Height(){}
+	};
+	struct Width {
+		double sOffset = 0, a = 0, b = 0, c = 0, d = 0;
+		Width(double _sOffset, double _a, double _b, double _c, double _d) :
+			sOffset(_sOffset), a(_a), b(_b), c(_c), d(_d) {
+			if (this->sOffset < 0) throw new std::exception("sOffset cannot be negative.");
+		}
+		Width(){}
+	};
+	struct Border {
+		double sOffset = 0, a = 0, b = 0, c = 0, d = 0;
+		Border(double _sOffset, double _a, double _b, double _c, double _d) :
+			sOffset(_sOffset), a(_a), b(_b), c(_c), d(_d) {
+			if (this->sOffset < 0) throw new std::exception("sOffset cannot be negative.");
+		}
+		Border(){}
+	};
+	struct LaneGeometry {
+		std::vector<Border> border;
+		std::vector<Width> width;
+		LaneGeometry(std::vector<Border> _border, std::vector<Width> _width):
+		border(_border),width(_width){}
+		double getCurrentWidth(double s) {
+
+		}
+		LaneGeometry() {}
+	};
+	struct Predecessor {
+		int id;
+		Predecessor(int _id):id(_id){}
+	};
+	struct Successor {
+		int id;
+		Successor(int _id):id(_id){}
+	};
+	struct Link {
+		std::vector<Predecessor> predecessor;
+		std::vector<Successor> successor;
+	};
+	struct Lane {
+		int id;
+		Type type;
+		std::optional<bool> level = std::optional<bool>();
+		std::vector<Height> height;
+		LaneGeometry laneGeometry;
+		std::optional<Link> link;
+
+	};
+	struct Left {
+		std::vector<Lane> lane;
+		Left(std::vector<Lane> _lane):lane(_lane) {
+			for (int i = 0; i < this->lane.size(); i++) {
+				if (this->lane.at(i).id < 0) throw new std::exception("Lane ids for left lanes have to be positive !");
+			}
+		}
+	};
+	struct Center {
+		std::vector<Lane> lane;
+		Center(std::vector<Lane> _lane) :lane(_lane) {
+			for (int i = 0; i < this->lane.size(); i++) {
+				if (this->lane.at(i).id != 0) throw new std::exception("Lane ids for center lanes have to be equal zero !");
+			}
+		}
+		Center(){}
+	};
+	struct Right {
+		std::vector<Lane> lane;
+		Right(std::vector<Lane> _lane) :lane(_lane) {
+			for (int i = 0; i < this->lane.size(); i++) {
+				if (this->lane.at(i).id > 0) throw new std::exception("Lane ids for right lanes have to be negative !");
+			}
+		}
+	};
+	struct RoadMark {
+		RoadMark() {}
+	};
+}
+
+struct LaneSection:SBasedProperty {
+	double s;
+	std::optional<bool> singleSide = std::optional<bool>();
+	std::optional<Lanes::Right> right = std::optional<Lanes::Right>();
+	std::optional<Lanes::Left>  left = std::optional<Lanes::Left>();
+	Lanes::Center center;
+	LaneSection(double _s, std::optional<bool> _singleSide, Lanes::Center _center, std::optional<Lanes::Right> _right = std::optional<Lanes::Right>(),
+	std::optional<Lanes::Left>  _left = std::optional<Lanes::Left>()):s(_s),singleSide(_singleSide),center(_center),left(_left),right(_right){}
+	void getCurrentLeftWidth(double s, int index, double& innerDist, double& outerDist) {
+		if (index <= 0) {
+			throw new std::exception("Index for left lanes has to be positive");
+		}
+		if (left.has_value()) {
+			Lanes::Width defaultWidth;
+			int i;
+			double accumulativeWidth = 0;
+			for (i = 0; i < left.value().lane.size(); i++) {
+				Lanes::Width currentWidth = this->getCurrentPropSOffset(s, left.value().lane.at(i).laneGeometry.width, defaultWidth);
+				double ds = s - this->s - currentWidth.sOffset;
+				accumulativeWidth += currentWidth.a + currentWidth.b * ds + currentWidth.c * std::pow(ds, 2) + currentWidth.d * std::pow(ds, 3);
+				if (index == left.value().lane.at(i).id) {
+					//TODO
+					currentWidth = this->getCurrentPropSOffset(s, left.value().lane.at(i).laneGeometry.width, defaultWidth);
+					ds = s - this->s - currentWidth.sOffset;
+					outerDist = accumulativeWidth+currentWidth.a + currentWidth.b * ds + currentWidth.c * std::pow(ds, 2) + currentWidth.d * std::pow(ds, 3);
+					innerDist = accumulativeWidth;
+					return;
+				}
+			}
+			innerDist = 0;
+			outerDist = 0;
+		}
+	}
+	void getCurrentRightWidth(double s, int index, double& innerDist, double& outerDist) {
+		if (index >= 0) {
+			throw new std::exception("Index for left lanes has to be negative");
+		}
+		if (right.has_value()) {
+			Lanes::Width defaultWidth;
+			int i;
+			double accumulativeWidth = 0;
+			for (i = 0; i < right.value().lane.size(); i++) {
+				Lanes::Width currentWidth = this->getCurrentPropSOffset(s, right.value().lane.at(i).laneGeometry.width, defaultWidth);
+				double ds = s - this->s - currentWidth.sOffset;
+				accumulativeWidth += currentWidth.a + currentWidth.b * ds + currentWidth.c * std::pow(ds, 2) + currentWidth.d * std::pow(ds, 3);
+				if (index == right.value().lane.at(i).id) {
+					//TODO
+					currentWidth = this->getCurrentPropSOffset(s, right.value().lane.at(i).laneGeometry.width, defaultWidth);
+					ds = s - this->s - currentWidth.sOffset;
+					outerDist = accumulativeWidth + currentWidth.a + currentWidth.b * ds + currentWidth.c * std::pow(ds, 2) + currentWidth.d * std::pow(ds, 3);
+					innerDist = accumulativeWidth;
+					return;
+				}
+			}
+			innerDist = 0;
+			outerDist = 0;
+		}
+	}
+	LaneSection() {
+		this->s = 0;
+		Lanes::Center defaultCenter = Lanes::Center();
+	}
+};
+
+struct lanes:SBasedProperty {
+	std::vector<LaneSection> laneSections;
+	lanes(std::vector<LaneSection> _laneSections):laneSections(_laneSections){}
+	LaneSection getCurrentLaneSection(double s) {
+		LaneSection defaultLaneSection = LaneSection();
+		return this->getCurrentProp(s, this->laneSections, defaultLaneSection);
+	}
+};
+class RoadSegment {
+	std::vector<glm::dvec4> vertices;
+};
 class Road {
 	friend class OpenDriveDocument;
 private:
-	std::optional<std::string> name;
-	std::optional<TrafficRule> rule;
-	std::optional<LateralProfile> lateralProfile;
-	std::optional<ElevationProfile> elevationProfile;
 	double length;
 	std::string id;
 	std::string junction;
 	PlanView planView;
 	Link link;
+	std::optional<std::string> name;
+	std::optional<TrafficRule> rule;
+	std::optional<LateralProfile> lateralProfile;
+	std::optional<ElevationProfile> elevationProfile;
 	std::vector<Type> types;
+	lanes roadLanes;
 	std::vector<glm::dvec4> referenceLinePoints;
+	
+	std::vector<RoadSegment> roadSegments;
+	std::vector<unsigned int> roadIndexes;
+	void generateRoad() {
+		ElevationProfile ep = this->elevationProfile.value_or(ElevationProfile());
+		LateralProfile lp = this->lateralProfile.value_or(LateralProfile());
+		for (int i = 0; i < this->planView.geometries.size(); i++) {
+			double ds = 0;
+			Geometry* g = this->planView.geometries.at(i);
+			g->generateReferenceLine();
+			std::vector<glm::dvec4> referenceLineCoordinates = g->vertices;
+			double step_ds = g->length / referenceLineCoordinates.size();
+			for (int j = 0; j < referenceLineCoordinates.size()-1; j++) {
+				double s = g->s + j * step_ds;
+				glm::dvec4 pos = referenceLineCoordinates.at(j);
+				Elevation elevation = ep.getCurrentElevation(s);
+				Superelevation superelevation = lp.getCurrentSuperelevation(s);
+				//a + b*ds + c*ds² + d*ds³
+				double ds = s - elevation.s;
+				pos.z = elevation.a + elevation.b * ds + elevation.c * std::pow(ds, 2) + elevation.d * std::pow(ds, 3);
+				ds = s - superelevation.s;
+				pos.w = superelevation.a + superelevation.b * ds + superelevation.c * std::pow(ds, 2) + superelevation.d * std::pow(ds, 3);
+				referenceLinePoints.push_back(pos);
+				
+				glm::dvec3 up = glm::dvec3(0,0,1);
+				glm::dvec3 s_direction =glm::dvec3( glm::normalize(referenceLineCoordinates.at(j+int(1)) - pos));
+				
+				glm::dvec3 left_direction = glm::cross(s_direction, up);
+				LaneSection laneSection = this->roadLanes.getCurrentLaneSection(s);
+				if (laneSection.left.has_value()) {
+					Lanes::Left left = laneSection.left.value();
+					for (int i = 0; i < left.lane.size(); i++) {
+						double innerW, outerW;
+						laneSection.getCurrentLeftWidth(s, i+1, innerW, outerW);
+						glm::dvec3 innerPos = left_direction * innerW;
+						glm::dvec3 outerPos = left_direction * outerW;
+						this->debugLinesVertices.push_back(glm::dvec4(innerPos, 1.0));
+						this->debugLinesVertices.push_back(glm::dvec4(outerPos, 1.0));
+					}
+				}
+				
+				std::cout << "Hello";
+			}
+		}
+	}
 	void generateReferenceLineCoordinates() {  
 		ElevationProfile ep = this->elevationProfile.value_or(ElevationProfile());
+		LateralProfile lp = this->lateralProfile.value_or(LateralProfile());
 		for (int i = 0; i < this->planView.geometries.size(); i++) {
 			double ds = 0;
 			Geometry* g = this->planView.geometries.at(i);
@@ -517,31 +784,27 @@ private:
 			for (int j = 0; j < referenceLineCoordinates.size(); j++) {
 				double s = g->s + j * step_ds;
 				glm::dvec4 pos = referenceLineCoordinates.at(j);
-				if (this->id == "2") {
-					std::string d = "Hello";
-				}
 				Elevation elevation = ep.getCurrentElevation(s);
+				Superelevation superelevation = lp.getCurrentSuperelevation(s);
 					//a + b*ds + c*ds² + d*ds³
 				double ds = s-elevation.s;
 				pos.z = elevation.a + elevation.b*ds + elevation.c*std::pow(ds,2)+elevation.d*std::pow(ds, 3);
-				referenceLinePoints.push_back(pos);
+				ds = s - superelevation.s;
+				pos.w = superelevation.a + superelevation.b * ds + superelevation.c * std::pow(ds, 2) + superelevation.d * std::pow(ds, 3);
+				//referenceLinePoints.push_back(pos);
 			}
 		}
 	}
 
 public:
+	std::vector<glm::dvec4> debugLinesVertices;
 	Road(double _length, std::string _id, std::string _junction, 
 		std::optional<std::string> _name,std::optional<TrafficRule> _rule, PlanView _planView,
-	Link _link, std::vector<Type> _types, std::optional<LateralProfile> _lateralProfile = std::optional<LateralProfile>(),
+	Link _link, std::vector<Type> _types, lanes _lanes,std::optional<LateralProfile> _lateralProfile = std::optional<LateralProfile>(),
 	std::optional<ElevationProfile> _elevationProfile = std::optional<ElevationProfile>()):
 	length(_length),id(_id),junction(_junction),name(_name),rule(_rule),planView(_planView),
-	link(_link),types(_types),lateralProfile(_lateralProfile),elevationProfile(_elevationProfile)
-	{
-
-	}
-	~Road() {
-
-	}
+	link(_link),types(_types),roadLanes(_lanes),lateralProfile(_lateralProfile),elevationProfile(_elevationProfile){}
+	~Road() {}
 	PlanView getPlanView() {
 		return this->planView;
 	}
@@ -569,12 +832,25 @@ private:
 	void populateSuperelevations(tinyxml2::XMLElement* xml_road, std::vector<Superelevation>& sueperelevations);
 	void populateShapes(tinyxml2::XMLElement* xml_road, std::vector<Shape>& shapes);
 	void populateElevations(tinyxml2::XMLElement* xml_road, std::vector<Elevation>& elevations);
+	void populateLaneSections(tinyxml2::XMLElement* xml_road, std::vector<LaneSection>& laneSections);
+	void populateLane(tinyxml2::XMLElement* xml_lanesection, Lanes::Lane& lane);
+	void switchLaneType(std::string s_type, Lanes::Type& type);
+	template <class T>
+	void populateGenericPolynomialTag(tinyxml2::XMLElement* xml_tag, T &polynomialStruct);
+	template <class T>
+	void populateGenericPolynomialTags(tinyxml2::XMLElement* xml_tag, std::string childTagName, std::vector<T> &polynomialStructs);
 public:
 	OpenDriveDocument(std::string filePath);
 	void generateReferenceLines();
+	void generateRoads() {
+		for (int i = 0; i < this->roads.size(); i++) {
+			this->roads.at(i).generateRoad();
+		}
+	}
 	void printOpenDriveDocument();
 	std::vector<Road> getRoads();
-	int parseOpenDriveDocument(tinyxml2::XMLDocument& doc);
+	int parseOpenDriveDocument();
+
 };
 
 
