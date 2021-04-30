@@ -16,6 +16,7 @@
 #include <iostream>
 #include <functional>
 #include <exception>
+#include "btBulletDynamicsCommon.h"
 #define GLM_SWIZZLE
 class OpenDriveMath {
 public:
@@ -700,9 +701,9 @@ struct lanes:SBasedProperty {
 	}
 };
 class RoadSegment {
-	int t_section_n_points = 100;
+	int t_section_n_points = 100; //both sides: left& right
 	std::vector<glm::dvec4> vertices;
-	//std::vector<btVector3> btVertices;
+	std::vector<btVector3> btVertices;
 };
 class Road {
 	friend class OpenDriveDocument;
@@ -719,9 +720,9 @@ private:
 	std::vector<Type> types;
 	lanes roadLanes;
 	std::vector<glm::dvec4> referenceLinePoints;
-	
 	std::vector<RoadSegment> roadSegments;
 	std::vector<unsigned int> roadIndexes;
+	//void 
 	void generateRoad() {
 		ElevationProfile ep = this->elevationProfile.value_or(ElevationProfile());
 		LateralProfile lp = this->lateralProfile.value_or(LateralProfile());

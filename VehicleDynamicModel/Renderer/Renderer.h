@@ -288,9 +288,9 @@ public:
 		//camera.setPosition(vec3(0, 0, 200));
 		//camera.setUp(vec3(0, 1, 0));
 		//camera.setForward(vec3(0, 0, -1));
-		camera.setPosition(vec3(200, 200, 0));
-		camera.setUp(vec3(0, 0, 1));
-		camera.setForward(vec3(-1, 0, 0));
+		camera.setPosition(vec3(0, 0, 200));
+		camera.setUp(vec3(0, 1, 0));
+		camera.setForward(vec3(0, 0, -1));
 		ViewMatrix = camera.cameraPositionKeyboard(0);
 		this->initLoopObjects();
 		GLuint drawMode = GL_FILL;

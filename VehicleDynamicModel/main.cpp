@@ -12,7 +12,7 @@ int main(int argc, char** argv)
 		openDriveFilePath = std::string(argv[1]);
 	}
 	else {
-		throw "No opendrive document";
+		openDriveFilePath = "Ex_Line-Spiral-Arc.xodr";
 	}
 	int generate_gaps = false;
 	if (argc > 2) {
