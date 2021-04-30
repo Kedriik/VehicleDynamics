@@ -73,8 +73,10 @@ public:
 	int m_savedState;
 	btVector3 m_oldPickingPos;
 	btVector3 m_hitPos;
+	//btBvhTriangleMeshShape p;
 	btScalar m_oldPickingDist;
 	bool useMCLPSolver = true;  //true
+	
 	void initPhysics()
 	{
 		btCollisionShape* groundShape = new btBoxShape(btVector3(50, 3, 50));

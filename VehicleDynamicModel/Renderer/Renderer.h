@@ -304,7 +304,7 @@ public:
 			///////////////
 			this->updateLoopObjects();
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-			glPointSize(10.0f);
+			glPointSize(2.0f);
 			ViewMatrix = camera.cameraPositionKeyboard(deltaTime);
 			GLuint drawMode = GL_LINE;
 			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
