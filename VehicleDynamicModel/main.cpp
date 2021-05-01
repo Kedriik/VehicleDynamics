@@ -1,5 +1,6 @@
 #pragma once
-#include "../VehicleDynamicModel/VehicleDynamicModel/VehicleDynamicModel.h"
+//#include "../VehicleDynamicModel/VehicleDynamicModel/VehicleDynamicModel.h"
+#include "VehicleDynamicModel.h"
 #include "OpenDriveDocument.h"
 #include "Renderer/Renderer.h"
 #include <exception>
