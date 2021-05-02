@@ -267,6 +267,7 @@ struct Geometry {
 		if (_length < 0) throw new std::exception("length cannot be negative");
 		s = _s;
 		length = _length;
+		n_vertices = int(length) + 1;
 	}
 	double s;
 	double x;
@@ -282,7 +283,6 @@ struct Geometry {
 struct line :Geometry {
 	line(double _s, double _x, double _y, double _hdg, double _length) :
 		Geometry(_s, _x, _y, _hdg, _length) {
-		n_vertices = 2;
 	}
 	void generateReferenceLine()override {
 		double step = this->length / this->n_vertices;
@@ -298,7 +298,6 @@ struct line :Geometry {
 struct spiral :Geometry {
 	spiral(double _curvStart, double _curvEnd, double _s, double _x, double _y, double _hdg, double _length) :
 		curvStart(_curvStart), curvEnd(_curvEnd), Geometry(_s, _x, _y, _hdg, _length) {
-		n_vertices = 100;
 
 	}
 private:
@@ -474,7 +473,6 @@ public:
 struct arc:Geometry {
 	arc(double _curvature, double _s, double _x, double _y, double _hdg, double _length) :
 		curvature(_curvature), Geometry(_s, _x, _y, _hdg, _length) {
-		n_vertices = 100;
 	}
 	double curvature;
 	void generateReferenceLine()override {
@@ -648,13 +646,15 @@ struct LaneSection:SBasedProperty {
 			for (i = 0; i < left.value().lane.size(); i++) {
 				Lanes::Width currentWidth = this->getCurrentPropSOffset(s, left.value().lane.at(i).laneGeometry.width, defaultWidth);
 				double ds = s - this->s - currentWidth.sOffset;
-				accumulativeWidth += currentWidth.a + currentWidth.b * ds + currentWidth.c * std::pow(ds, 2) + currentWidth.d * std::pow(ds, 3);
 				if (index == left.value().lane.at(i).id) {
 					currentWidth = this->getCurrentPropSOffset(s, left.value().lane.at(i).laneGeometry.width, defaultWidth);
 					ds = s - this->s - currentWidth.sOffset;
 					outerDist = accumulativeWidth+currentWidth.a + currentWidth.b * ds + currentWidth.c * std::pow(ds, 2) + currentWidth.d * std::pow(ds, 3);
 					innerDist = accumulativeWidth;
 					return;
+				}
+				else {
+					accumulativeWidth += currentWidth.a + currentWidth.b * ds + currentWidth.c * std::pow(ds, 2) + currentWidth.d * std::pow(ds, 3);
 				}
 			}
 			innerDist = 0;
@@ -700,10 +700,17 @@ struct lanes:SBasedProperty {
 		return this->getCurrentProp(s, this->laneSections, defaultLaneSection);
 	}
 };
-class RoadSegment {
-	int t_section_n_points = 100; //both sides: left& right
+struct RoadSegment {
+	int t_section_n_points = 10; //both sides: left& right
 	std::vector<glm::dvec4> vertices;
 	std::vector<btVector3> btVertices;
+};
+struct LineSegment {
+	int t_section_n_points = 10;
+	std::vector<glm::dvec4> vertices;
+	LineSegment(int _t_section_n_points = 10):t_section_n_points(_t_section_n_points){}
+	LineSegment(std::vector<glm::dvec4> _vertices,int _t_section_n_points = 10) :t_section_n_points(_t_section_n_points),
+	vertices(_vertices){}
 };
 class Road {
 	friend class OpenDriveDocument;
@@ -723,7 +730,7 @@ private:
 	std::vector<RoadSegment> roadSegments;
 	std::vector<unsigned int> roadIndexes;
 	//void 
-	void generateRoad() {
+	void generateRoad(std::vector<glm::dvec4>& vertices, std::vector<glm::dvec4>& reference_line_vertices) {
 		ElevationProfile ep = this->elevationProfile.value_or(ElevationProfile());
 		LateralProfile lp = this->lateralProfile.value_or(LateralProfile());
 		for (int i = 0; i < this->planView.geometries.size(); i++) {
@@ -752,11 +759,10 @@ private:
 				positionEnd.z = elevation_end.a + elevation_end.b * ds_end + elevation_end.c * std::pow(ds_end, 2) + elevation_end.d * std::pow(ds_end, 3);
 				ds_end = s_end - superelevation_end.s;
 				positionEnd.w = superelevation_end.a + superelevation_end.b * ds_end + superelevation_end.c * std::pow(ds_end, 2) + superelevation_end.d * std::pow(ds_end, 3);
-				
-				referenceLinePoints.push_back(positionStart);
+                reference_line_vertices.push_back(positionStart);
 				
 				glm::dvec3 up = glm::dvec3(0,0,1);
-				glm::dvec3 s_direction =glm::dvec3( glm::normalize(positionEnd - positionStart));
+				glm::dvec3 s_direction = glm::dvec3( glm::normalize(positionEnd - positionStart));
 				glm::dquat superelevation_rotation = glm::angleAxis(positionStart.w, glm::dvec3(s_direction));
 				glm::dvec3 left_direction = superelevation_rotation*glm::normalize(glm::cross(up,s_direction));
 				glm::dvec3 right_direction = superelevation_rotation*glm::normalize(glm::cross(s_direction,up));
@@ -766,10 +772,18 @@ private:
 					for (int i = 0; i < left.lane.size(); i++) {
 						double innerW, outerW;
 						laneSection.getCurrentLeftWidth(s_start, i+1, innerW, outerW);
-						glm::dvec3 innerPos = glm::dvec3(positionStart)+left_direction * innerW;
-						glm::dvec3 outerPos = glm::dvec3(positionStart)+left_direction * outerW;
-						this->debugLinesVertices.push_back(glm::dvec4(innerPos, 0.0));
-						this->debugLinesVertices.push_back(glm::dvec4(outerPos, 0.0));
+						glm::dvec3 innerPos = glm::dvec3(positionStart) + left_direction * innerW;
+						glm::dvec3 outerPos = glm::dvec3(positionStart) + left_direction * outerW;
+						LineSegment lineSegment = LineSegment();
+						double t_ds = (outerW - innerW) / lineSegment.t_section_n_points;
+						glm::dvec3 t_dir = glm::normalize(outerPos - innerPos);
+						for (int i = 0; i < lineSegment.t_section_n_points; i++) {
+							lineSegment.vertices.push_back(glm::dvec4(innerPos + t_dir*t_ds * double(i), 0.0));//TODO: apply shape
+							vertices.push_back(glm::dvec4(innerPos + t_dir * t_ds * double(i), 0.0));
+							//this->debugLinesVertices.push_back();
+						}
+						//this->debugLinesVertices.push_back(glm::dvec4(innerPos, 0.0));
+						//this->debugLinesVertices.push_back(glm::dvec4(outerPos, 0.0));
 					}
 				}
 				if (laneSection.right.has_value()) {
@@ -779,8 +793,16 @@ private:
 						laneSection.getCurrentLeftWidth(s_start, i + 1, innerW, outerW);
 						glm::dvec3 innerPos = glm::dvec3(positionStart) + right_direction * innerW;
 						glm::dvec3 outerPos = glm::dvec3(positionStart) + right_direction * outerW;
-						this->debugLinesVertices.push_back(glm::dvec4(innerPos, 0.0));
-						this->debugLinesVertices.push_back(glm::dvec4(outerPos, 0.0));
+						LineSegment lineSegment = LineSegment();
+						double t_ds = (outerW - innerW) / lineSegment.t_section_n_points;
+						glm::dvec3 t_dir = glm::normalize(outerPos - innerPos);
+						for (int i = 0; i < lineSegment.t_section_n_points; i++) {
+							lineSegment.vertices.push_back(glm::dvec4(innerPos + t_dir * t_ds * double(i), 0.0));//TODO: apply shape
+							vertices.push_back(glm::dvec4(innerPos + t_dir * t_ds * double(i), 0.0));
+							//this->debugLinesVertices.push_back(glm::dvec4(innerPos + t_dir * t_ds * double(i), 0.0));
+						}
+						//this->debugLinesVertices.push_back(glm::dvec4(innerPos, 0.0));
+						//this->debugLinesVertices.push_back(glm::dvec4(outerPos, 0.0));
 					}
 				}
 			}
@@ -811,7 +833,7 @@ private:
 	}
 
 public:
-	std::vector<glm::dvec4> debugLinesVertices;
+	
 	Road(double _length, std::string _id, std::string _junction, 
 		std::optional<std::string> _name,std::optional<TrafficRule> _rule, PlanView _planView,
 	Link _link, std::vector<Type> _types, lanes _lanes,std::optional<LateralProfile> _lateralProfile = std::optional<LateralProfile>(),
@@ -833,11 +855,10 @@ public:
 	}*/
 };
 class OpenDriveDocument
-{
+{	
 private:
 	std::vector<Road> roads;
 	tinyxml2::XMLDocument doc;
-	
 	Link createLink(tinyxml2::XMLElement* xml_road);
 	template <class T>
 	void populateCessor(tinyxml2::XMLElement* xml_cessor, T& cessor);
@@ -854,11 +875,13 @@ private:
 	template <class T>
 	void populateGenericPolynomialTags(tinyxml2::XMLElement* xml_tag, std::string childTagName, std::vector<T> &polynomialStructs);
 public:
+	std::vector <glm::dvec4> road_vertices;
+	std::vector <glm::dvec4> reference_line_vertices;
 	OpenDriveDocument(std::string filePath);
 	void generateReferenceLines();
 	void generateRoads() {
 		for (int i = 0; i < this->roads.size(); i++) {
-			this->roads.at(i).generateRoad();
+			this->roads.at(i).generateRoad(this->road_vertices, this->reference_line_vertices);
 		}
 	}
 	void printOpenDriveDocument();

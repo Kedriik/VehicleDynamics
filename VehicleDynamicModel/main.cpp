@@ -36,21 +36,25 @@ int main(int argc, char** argv)
 	renderer.init(1500, 1000);
 
 	std::vector<VerticesObject*> verticesObjects;
-	
-	for (int i = 0; i < odd.getRoads().size(); i++) {
+	std::vector<glm::dvec4> documentVertices;
+	/*for (int i = 0; i < odd.getRoads().size(); i++) {
 		Road r = odd.getRoads().at(i);
-		//for (int j = 0; j < r.getPlanView().geometries.size(); j++) {
-		//	Geometry* g = r.getPlanView().geometries.at(j);
-			VerticesObject * obj = new VerticesObject(r.getReferencePoints(), GL_LINE_STRIP);
+		for (int j = 0; j < r.getPlanView().geometries.size(); j++) {
+			Geometry* g = r.getPlanView().geometries.at(j);
+			VerticesObject * obj = new VerticesObject(g->vertices, GL_LINE_STRIP,glm::vec4(1,0,0,1));
 			obj->generateVBO();
-			VerticesObject* dobj = new VerticesObject(r.debugLinesVertices, GL_POINTS);
-			dobj->generateVBO();
 			verticesObjects.push_back(obj);
-			verticesObjects.push_back(dobj);
-		//}
+		}
 
-	}
-	
+	}*/
+
+	VerticesObject* obj = new VerticesObject(odd.road_vertices, GL_POINTS);
+	obj->generateVBO();
+	verticesObjects.push_back(obj);
+
+	VerticesObject* robj = new VerticesObject(odd.reference_line_vertices, GL_LINE_STRIP, glm::dvec4(1,0,0,1));
+	robj->generateVBO();
+	verticesObjects.push_back(robj);
 
 	double gap = 5.0;
 	

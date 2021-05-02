@@ -198,7 +198,7 @@ public:
 
 
 
-		window = glfwCreateWindow(width, height, "Benchmarks", NULL, NULL);
+		window = glfwCreateWindow(width, height, "Visu", NULL, NULL);
 		glfwMakeContextCurrent(window);
 
 		// Initialize GLEW
