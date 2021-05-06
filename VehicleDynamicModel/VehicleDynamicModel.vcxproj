@@ -75,7 +75,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(SolutionDir)VehicleDynamicModel\Renderer\glfw-3.2.1.bin.WIN64\include\GLFW;$(SolutionDir)VehicleDynamicModel\Renderer\LoadShaders\include\GL;$(SolutionDir)VehicleDynamicModel\Renderer\LoadShaders\include\GL3;$(SolutionDir)VehicleDynamicModel\Renderer\LoadShaders;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)boost;$(SolutionDir)VehicleDynamicModel\Renderer\glfw-3.2.1.bin.WIN64\include\GLFW;$(SolutionDir)VehicleDynamicModel\Renderer\LoadShaders\include\GL;$(SolutionDir)VehicleDynamicModel\Renderer\LoadShaders\include\GL3;$(SolutionDir)VehicleDynamicModel\Renderer\LoadShaders;$(IncludePath)</IncludePath>
     <LibraryPath>$(SolutionDir)VehicleDynamicModel\Renderer\glfw-3.2.1.bin.WIN64\lib-vc2015;$(SolutionDir)VehicleDynamicModel\Renderer\LoadShaders\lib;$(LibraryPath)</LibraryPath>
     <SourcePath>$(SolutionDir)VehicleDynamicModel\Renderer\LoadShaders\lib;$(SourcePath)</SourcePath>
   </PropertyGroup>
@@ -107,7 +107,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;NOMINMAX;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(SolutionDir);$(SolutionDir)BulletPhysics\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -160,6 +160,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\tinyxml2\tinyxml2.cpp" />
+    <ClCompile Include="delaunator.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="OpenDriveDocument.cpp" />
     <ClCompile Include="Renderer\LoadShaders\lib\LoadShaders.cpp" />
@@ -169,6 +170,8 @@
   <ItemGroup>
     <ClInclude Include="..\Renderer\DebugDraw.h" />
     <ClInclude Include="..\tinyxml2\tinyxml2.h" />
+    <ClInclude Include="delaunator.h" />
+    <ClInclude Include="earcut.hpp" />
     <ClInclude Include="OpenDriveDocument.h" />
     <ClInclude Include="Renderer\camera.h" />
     <ClInclude Include="Renderer\LoadShaders\include\LoadShaders.h" />

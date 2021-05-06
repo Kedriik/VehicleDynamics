@@ -109,6 +109,57 @@ public:
 		return this->drawMode;
 	}
 };
+
+class IndexedVerticesObject {
+public:
+	std::vector<glm::dvec4> vertices;
+	std::vector<unsigned int> indexes;
+	std::vector<unsigned int> _indexes;
+	GLuint vbo = 0;
+	GLuint color;
+	GLuint drawMode;
+	GLuint IndexBuffer;
+	glm::vec4 vcolor;
+public:
+	IndexedVerticesObject(std::vector<glm::dvec4> _vertices, std::vector<unsigned int> _indexes, GLuint _drawMode, glm::vec4 _color = glm::vec4(0.0, 1.0, 0.0, 1.0)) {
+		this->vertices = _vertices;
+		this->indexes = _indexes;
+		this->vcolor = _color;
+		this->drawMode = _drawMode;
+	}
+	virtual std::vector<dvec4> getVertices() {
+		return this->vertices;
+	}
+	virtual void generateVBO() {
+		glGenBuffers(1, &this->vbo);
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, this->vbo);
+		glBufferData(GL_SHADER_STORAGE_BUFFER, this->vertices.size() * sizeof(dvec4), this->vertices.data(), GL_DYNAMIC_COPY);
+		glGenBuffers(1, &this->color);
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, this->color);
+		glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(vec4), &this->vcolor.data, GL_DYNAMIC_COPY);
+		glGenBuffers(1, &this->IndexBuffer);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IndexBuffer);
+		for (int i = 0; i < this->indexes.size(); i++) {
+			this->_indexes.push_back(this->indexes.at(i));
+		}
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, this->_indexes.size() * sizeof(unsigned int), this->_indexes.data(), GL_DYNAMIC_COPY);
+	}
+	virtual GLuint getVBO() {
+		if (vbo == 0) {
+			throw "VBO not generated";
+		}
+		return this->vbo;
+	}
+	virtual GLuint getColor() {
+		if (color == 0) {
+			throw "Color not generated";
+		}
+		return this->color;
+	}
+	virtual GLuint getDrawMode() {
+		return this->drawMode;
+	}
+};
 class LoopObject {
 public:
 	virtual void init() {
@@ -158,6 +209,7 @@ protected:
 	GLuint VBO;
 	int VBOSize = 2;
 	std::vector<VerticesObject*> verticesObjects;
+	std::vector<IndexedVerticesObject*> indexedVerticesObjects;
 	vec4* vbo;
 	GLuint DebugBuffer;
 	struct perFrameData
@@ -281,6 +333,9 @@ public:
 	virtual void addVerticesObjects(std::vector< VerticesObject*> verticesObjects) {
 		this->verticesObjects = verticesObjects;
 	}
+	virtual void addIndexedVerticesObjects(std::vector<IndexedVerticesObject*> verticesObjects) {
+		this->indexedVerticesObjects = verticesObjects;
+	}
 	virtual void launchLoop() {
 		double loopTotalTime = 0;
 		double deltaTime = 0;
@@ -309,6 +364,10 @@ public:
 			GLuint drawMode = GL_LINE;
 			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+			if (glfwGetKey(window, GLFW_KEY_V) == GLFW_PRESS)
+				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+			else
+				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 			glBindBuffer(GL_SHADER_STORAGE_BUFFER, PerFrameBuffer);
 			perFrameData = (struct perFrameData*) glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, sizeof(struct perFrameData), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
 			perFrameData->ViewMatrix = ViewMatrix;
@@ -333,6 +392,24 @@ public:
 
 				//GLuint _vbo = this->verticesObjects.at(i)->getVBO();
 				glDrawArrays(this->verticesObjects.at(i)->getDrawMode(), 0, this->verticesObjects.at(i)->getVertices().size());
+			}
+			for (int i = 0; i < this->indexedVerticesObjects.size(); i++) {
+				glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, this->indexedVerticesObjects.at(i)->getColor());
+				glEnableVertexAttribArray(0);
+				glBindBuffer(GL_ARRAY_BUFFER, this->indexedVerticesObjects.at(i)->getVBO());
+				glVertexAttribPointer(
+					0,                  // attribute. No particular reason for 3, but must match the layout in the shader.
+					4,                  // size
+					GL_DOUBLE,           // type
+					GL_FALSE,           // normalized?
+					0,                  // stride
+					(void*)0            // array buffer offset
+				);
+
+				//GLuint _vbo = this->verticesObjects.at(i)->getVBO();
+				glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, this->indexedVerticesObjects.at(i)->IndexBuffer);
+				glDrawElements(GL_TRIANGLES, this->indexedVerticesObjects.at(i)->indexes.size(), GL_UNSIGNED_INT, (void*)0);
+				//glDrawArrays(this->indexedVerticesObjects.at(i)->getDrawMode(), 0, this->indexedVerticesObjects.at(i)->getVertices().size());
 			}
 			///////////////
 			lastTime = currentTime;
