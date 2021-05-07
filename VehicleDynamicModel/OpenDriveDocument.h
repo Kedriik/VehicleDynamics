@@ -20,6 +20,8 @@
 #include <array>
 #include "earcut.hpp"
 #include "delaunator.h"
+//#include "poly2tri/poly2tri.h
+#include "poly2tri/poly2tri.h"
 #define GLM_SWIZZLE
 class OpenDriveMath {
 public:
@@ -785,7 +787,7 @@ private:
 						int n_points = int((outerW - innerW) / 0.3 + 1);
 						double t_ds = (outerW - innerW) / n_points;
 						glm::dvec3 t_dir = glm::normalize(outerPos - innerPos);
-						for (int i = 0; i < n_points; i++) {
+						for (int i = 1; i < n_points; i++) {
 							//lineSegment.vertices.push_back(glm::dvec4(innerPos + t_dir * t_ds * double(i), 0.0));//TODO: apply shape
 							vertices.push_back(glm::dvec4(innerPos + t_dir * t_ds * double(i), 0.0));
 							//vertices.at(vertices.size() - 1).z = std::sin(i);
@@ -806,7 +808,7 @@ private:
 						int n_points = int((outerW - innerW) / 0.3 + 1);
 						double t_ds = (outerW - innerW) / n_points;
 						glm::dvec3 t_dir = glm::normalize(outerPos - innerPos);
-						for (int i = 0; i < n_points; i++) {
+						for (int i = 1; i < n_points; i++) {
 							//lineSegment.vertices.push_back(glm::dvec4(innerPos + t_dir*t_ds * double(i), 0.0));//TODO: apply shape
 							vertices.push_back(glm::dvec4(innerPos + t_dir * t_ds * double(i), 0.0));
 							//this->debugLinesVertices.push_back();
@@ -820,22 +822,14 @@ private:
 		//vertices
 		
 		using Point = std::array<double, 2>;
-		std::vector<double>  delanuator_vertices;
-		std::vector<Point> points;
-		for (int i = 0; i < vertices.size(); i++) {
-			//glm::dvec2 pos = glm::dvec2(vertices.at(i).x, vertices.at(i).y);
-			//points.push_back({ vertices.at(i).x,vertices.at(i).y });
-			delanuator_vertices.push_back(vertices.at(i).x);
-			delanuator_vertices.push_back(vertices.at(i).y);
-
-			//delanuator_vertices.push_back();
-		}
+	
 		//delanuator_vertices.push_back(points);
 		//roadIndexes = mapbox::earcut<unsigned int>(delanuator_vertices);
-		Delaunator d(delanuator_vertices);
-		for (int i = 0; i < d.triangles.size(); i++) {
-			roadIndexes.push_back(d.triangles.at(i));
-		}
+
+		
+		//p2t::CDT* cdt = new p2t::CDT(points);
+		//cdt->Triangulate();
+		//std::vector<p2t::Triangle*> triangles = cdt->GetTriangles();
 		//std::cout << d.triangles.size() << std::endl;
 			
 	}
@@ -898,10 +892,16 @@ private:
 			glm::dvec3 v0 = glm::dvec3(vertices.at(indexes.at(i)));
 			glm::dvec3 v1 = glm::dvec3(vertices.at(indexes.at(i+1)));
 			glm::dvec3 v2 = glm::dvec3(vertices.at(indexes.at(i+2)));
-			if (glm::distance(v0, v1) > alpha || glm::distance(v0, v2) > alpha ||
-				glm::distance(v1, v2) > alpha) {
+			double side0 = glm::distance(v0, v1);
+			double side1 = glm::distance(v0, v2);
+			double side2 = glm::distance(v1, v2);
+			if ( side0 > alpha ||  side1> alpha ||
+				side2 > alpha) {
 				continue;
 			}
+			//else if (side0 + side1 < 2 * side2 || side1 + side2 < 2 * side0 || side2 + side0 < 2 * side1) {
+			//	continue;
+			//}
 			else {
 				correct_indexes.push_back(indexes.at(i));
 				correct_indexes.push_back(indexes.at(i+1));
@@ -934,6 +934,21 @@ public:
 	void generateRoads() {
 		for (int i = 0; i < this->roads.size(); i++) {
 			this->roads.at(i).generateRoad(this->road_vertices, this->roadIndexes, this->reference_line_vertices);
+		}
+		std::vector<double>  delanuator_vertices;
+		std::vector<p2t::Point*> points;
+		for (int i = 0; i < this->road_vertices.size(); i++) {
+			//glm::dvec2 pos = glm::dvec2(vertices.at(i).x, vertices.at(i).y);
+			//points.push_back({ vertices.at(i).x,vertices.at(i).y });
+			delanuator_vertices.push_back(this->road_vertices.at(i).x);
+			delanuator_vertices.push_back(this->road_vertices.at(i).y);
+			//points.push_back(new p2t::Point(vertices.at(i).x, vertices.at(i).y));
+
+			//delanuator_vertices.push_back();
+		}
+		Delaunator d(delanuator_vertices);
+		for (int i = 0; i < d.triangles.size(); i++) {
+			roadIndexes.push_back(d.triangles.at(i));
 		}
 		this->roadIndexes = this->filterOutDegeneratedTriangles(this->roadIndexes, this->road_vertices);
 	}
