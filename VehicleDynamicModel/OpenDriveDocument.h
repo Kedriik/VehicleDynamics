@@ -18,10 +18,7 @@
 #include <exception>
 #include "btBulletDynamicsCommon.h"
 #include <array>
-#include "earcut.hpp"
 #include "delaunator.h"
-//#include "poly2tri/poly2tri.h
-#include "poly2tri/poly2tri.h"
 #define GLM_SWIZZLE
 class OpenDriveMath {
 public:
@@ -936,7 +933,6 @@ public:
 			this->roads.at(i).generateRoad(this->road_vertices, this->roadIndexes, this->reference_line_vertices);
 		}
 		std::vector<double>  delanuator_vertices;
-		std::vector<p2t::Point*> points;
 		for (int i = 0; i < this->road_vertices.size(); i++) {
 			//glm::dvec2 pos = glm::dvec2(vertices.at(i).x, vertices.at(i).y);
 			//points.push_back({ vertices.at(i).x,vertices.at(i).y });
