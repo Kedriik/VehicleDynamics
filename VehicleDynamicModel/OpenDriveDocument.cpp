@@ -187,10 +187,16 @@ void OpenDriveDocument::populateLaneSections(tinyxml2::XMLElement* xml_road, std
 			Lanes::Right right = Lanes::Right(lanes);
 			_right = std::optional<Lanes::Right>(right);
 		}
+		if (_left.has_value()) {
+			std::sort(_left.value().lane.begin(), _left.value().lane.end());
+		}
+		if (_right.has_value()) {
+			std::sort(_right.value().lane.begin(), _right.value().lane.end());
+			std::reverse(_right.value().lane.begin(), _right.value().lane.end());
+		}
 		LaneSection laneSection = LaneSection(s, std::optional<bool>(singleSide), center,_right,_left);
 		laneSections.push_back(laneSection);
 		xml_lanesection = xml_lanesection->NextSiblingElement("laneSection");
-		
 	}
 }
 void OpenDriveDocument::populateLane(tinyxml2::XMLElement* xml_lane, Lanes::Lane& lane)
