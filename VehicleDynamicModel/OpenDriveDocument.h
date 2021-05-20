@@ -741,7 +741,7 @@ private:
 
 	}
 	void generateRoad(std::vector<glm::dvec4>& vertices, std::vector<unsigned int> &roadIndexes, std::vector<glm::dvec4>& reference_line_vertices,
-		std::vector<glm::dvec4>& road_edges) {
+		std::vector<glm::dvec4>& road_edges, std::vector<std::string>& connection_road_ids) {
 		ElevationProfile ep = this->elevationProfile.value_or(ElevationProfile());
 		LateralProfile lp = this->lateralProfile.value_or(LateralProfile());
 		for (int i = 0; i < this->planView.geometries.size(); i++) {
@@ -789,10 +789,12 @@ private:
 						int n_points = int((outerW - innerW) / 2 + 1);
 						double t_ds = (outerW - innerW) / n_points;
 						glm::dvec3 t_dir = glm::normalize(outerPos - innerPos);
-						if(right.lane.size()-1 == i)
-							road_edges.push_back(glm::dvec4(innerPos + t_dir * t_ds * double(n_points), 0.0));
-						for (int i = 0; i <= n_points; i++) {
-							vertices.push_back(glm::dvec4(innerPos + t_dir * t_ds * double(i), 0.0));
+						if (std::find(connection_road_ids.begin(), connection_road_ids.end(), this->id) == connection_road_ids.end()) {
+							if(right.lane.size()-1 == i)
+								road_edges.push_back(glm::dvec4(innerPos + t_dir * t_ds * double(n_points), 0.0));
+							for (int i = 0; i <= n_points; i++) {
+								vertices.push_back(glm::dvec4(innerPos + t_dir * t_ds * double(i), 0.0));
+							}
 						}
 					}
 				}
@@ -807,10 +809,12 @@ private:
 						int n_points = int((outerW - innerW) / 2 + 1);
 						double t_ds = (outerW - innerW) / n_points;
 						glm::dvec3 t_dir = glm::normalize(outerPos - innerPos);
-						if(i== left.lane.size()-1)
-							road_edges.push_back(glm::dvec4(innerPos + t_dir * t_ds * double(n_points), 0.0));
-						for (int i = 0; i <= n_points; i++) {
-							vertices.push_back(glm::dvec4(innerPos + t_dir * t_ds * double(i), 0.0));
+						if (std::find(connection_road_ids.begin(), connection_road_ids.end(), this->id) == connection_road_ids.end()) {
+							if (i == left.lane.size() - 1)
+								road_edges.push_back(glm::dvec4(innerPos + t_dir * t_ds * double(n_points), 0.0));
+							for (int i = 0; i <= n_points; i++) {
+								vertices.push_back(glm::dvec4(innerPos + t_dir * t_ds * double(i), 0.0));
+							}
 						}
 					}
 				}
@@ -868,6 +872,7 @@ class OpenDriveDocument
 {	
 private:
 	std::vector<Road> roads;
+	std::vector<std::string> connection_road_ids;
 	tinyxml2::XMLDocument doc;
 	std::vector<unsigned int> filterOutDegeneratedTriangles(std::vector<unsigned int>indexes, std::vector<glm::dvec4> vertices) {
 		std::vector<unsigned int> correct_indexes;
@@ -910,6 +915,19 @@ private:
 	void populateGenericPolynomialTag(tinyxml2::XMLElement* xml_tag, T &polynomialStruct);
 	template <class T>
 	void populateGenericPolynomialTags(tinyxml2::XMLElement* xml_tag, std::string childTagName, std::vector<T> &polynomialStructs);
+	void populateConnectionRoads() //TODO: this is temporary function !!! Consider removing it and implement proper junction parsing
+	{
+		tinyxml2::XMLElement* xml_junction = this->doc.FirstChildElement()->FirstChildElement("junction");
+		while (xml_junction != nullptr) {
+			tinyxml2::XMLElement* xml_connection = xml_junction->FirstChildElement("connection");
+			while (xml_connection != nullptr) {
+				std::string connection_road_id = std::string(xml_connection->Attribute("connectingRoad"));
+				this->connection_road_ids.push_back(connection_road_id);
+				xml_connection = xml_connection->NextSiblingElement("connection");
+			}
+			xml_junction = xml_junction->NextSiblingElement("junction");
+		}
+	}
 public:
 	std::vector <glm::dvec4> road_vertices;
 	std::vector<unsigned int> roadIndexes;
@@ -920,7 +938,7 @@ public:
 	void generateReferenceLines();
 	void generateRoads() {
 		for (int i = 0; i < this->roads.size(); i++) {
-			this->roads.at(i).generateRoad(this->road_vertices, this->roadIndexes, this->reference_line_vertices, road_edges);
+			this->roads.at(i).generateRoad(this->road_vertices, this->roadIndexes, this->reference_line_vertices, road_edges, connection_road_ids);
 		}
 		bool triangulate = false;
 		double dist_epsilon = 0.1;

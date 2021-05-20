@@ -6,7 +6,6 @@
 #include "Renderer/Renderer.h"
 #include <exception>
 
-
 int main(int argc, char** argv)
 {
 	std::string openDriveFilePath;
@@ -107,7 +106,7 @@ int main(int argc, char** argv)
 		glfwSwapBuffers(dd->window);
 		glfwPollEvents();*/
 	//}
-	std::cout << "Hello World!\n";
+	
 	for (auto vo : verticesObjects) {
 		delete vo;
 	}

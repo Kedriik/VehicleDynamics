@@ -12,6 +12,7 @@ std::vector<Road> OpenDriveDocument::getRoads() {
 	return this->roads;
 }
 int OpenDriveDocument::parseOpenDriveDocument() {
+	this->populateConnectionRoads();
 	tinyxml2::XMLElement* xml_road = this->doc.FirstChildElement()->FirstChildElement("road");
 	double road_length;
 	std::string road_id, road_junction;
