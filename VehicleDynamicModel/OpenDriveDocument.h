@@ -19,6 +19,7 @@
 #include "btBulletDynamicsCommon.h"
 #include <array>
 #include "delaunator.h"
+#include "CDT/include/CDT.h"
 #define GLM_SWIZZLE
 class OpenDriveMath {
 public:
@@ -740,8 +741,9 @@ private:
 	void fillLanesVertices(T _lane, std::vector<glm::dvec4> vertices) {
 
 	}
-	void generateRoad(std::vector<glm::dvec4>& vertices, std::vector<unsigned int> &roadIndexes, std::vector<glm::dvec4>& reference_line_vertices,
-		std::vector<glm::dvec4>& road_edges, std::vector<std::string>& connection_road_ids) {
+	void generateRoad(std::vector<glm::dvec4>& vertices, std::vector<unsigned int>& roadIndexes, std::vector<glm::dvec4>& reference_line_vertices,
+		std::vector<glm::dvec4>& road_left_edges, std::vector<glm::dvec4>& road_right_edges, std::vector<std::string>& connection_road_ids) {
+		double edge_epsilon = 0.0;
 		ElevationProfile ep = this->elevationProfile.value_or(ElevationProfile());
 		LateralProfile lp = this->lateralProfile.value_or(LateralProfile());
 		for (int i = 0; i < this->planView.geometries.size(); i++) {
@@ -791,8 +793,8 @@ private:
 						glm::dvec3 t_dir = glm::normalize(outerPos - innerPos);
 						if (std::find(connection_road_ids.begin(), connection_road_ids.end(), this->id) == connection_road_ids.end()) {
 							if(right.lane.size()-1 == i)
-								road_edges.push_back(glm::dvec4(innerPos + t_dir * t_ds * double(n_points), 0.0));
-							for (int i = 0; i <= n_points; i++) {
+								road_right_edges.push_back(glm::dvec4(innerPos + t_dir * t_ds * double(n_points+edge_epsilon), 0.0));
+							for (int i = 0; i < n_points; i++) {
 								vertices.push_back(glm::dvec4(innerPos + t_dir * t_ds * double(i), 0.0));
 							}
 						}
@@ -811,8 +813,8 @@ private:
 						glm::dvec3 t_dir = glm::normalize(outerPos - innerPos);
 						if (std::find(connection_road_ids.begin(), connection_road_ids.end(), this->id) == connection_road_ids.end()) {
 							if (i == left.lane.size() - 1)
-								road_edges.push_back(glm::dvec4(innerPos + t_dir * t_ds * double(n_points), 0.0));
-							for (int i = 0; i <= n_points; i++) {
+								road_left_edges.push_back(glm::dvec4(innerPos + t_dir * t_ds * double(n_points + edge_epsilon), 0.0));
+							for (int i = 0; i < n_points; i++) {
 								vertices.push_back(glm::dvec4(innerPos + t_dir * t_ds * double(i), 0.0));
 							}
 						}
@@ -874,7 +876,32 @@ private:
 	std::vector<Road> roads;
 	std::vector<std::string> connection_road_ids;
 	tinyxml2::XMLDocument doc;
-	std::vector<unsigned int> filterOutDegeneratedTriangles(std::vector<unsigned int>indexes, std::vector<glm::dvec4> vertices) {
+	double area(double x1, double y1, double x2, double y2, double x3, double y3)
+	{
+		return abs((x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2)) / 2.0);
+	}
+
+	/* A function to check whether point P(x, y) lies inside the triangle formed
+	   by A(x1, y1), B(x2, y2) and C(x3, y3) */
+	bool isInside(double x1, double y1, double x2, double y2, double x3, double y3, double x, double y)
+	{
+		/* Calculate area of triangle ABC */
+		double A = area(x1, y1, x2, y2, x3, y3);
+
+		/* Calculate area of triangle PBC */
+		double A1 = area(x, y, x2, y2, x3, y3);
+
+		/* Calculate area of triangle PAC */
+		double A2 = area(x1, y1, x, y, x3, y3);
+
+		/* Calculate area of triangle PAB */
+		double A3 = area(x1, y1, x2, y2, x, y);
+
+		/* Check if sum of A1, A2 and A3 is same as A */
+		return (A == A1 + A2 + A3);
+	}
+	std::vector<unsigned int> filterOutDegeneratedTriangles(std::vector<unsigned int>&indexes,
+		std::vector<glm::dvec4>& vertices, std::vector<glm::dvec4>& edges) {
 		std::vector<unsigned int> correct_indexes;
 		double alpha = 2;
 		for (int i = 0; i < indexes.size()-3; i += 3) {
@@ -882,17 +909,16 @@ private:
 			glm::dvec3 v0 = glm::dvec3(vertices.at(indexes.at(i)));
 			glm::dvec3 v1 = glm::dvec3(vertices.at(indexes.at(i+1)));
 			glm::dvec3 v2 = glm::dvec3(vertices.at(indexes.at(i+2)));
-			double side0 = glm::distance(v0, v1);
-			double side1 = glm::distance(v0, v2);
-			double side2 = glm::distance(v1, v2);
-			if ( side0 > alpha ||  side1> alpha ||
-				side2 > alpha) {
+			bool filter_out = false;
+			for(int j=0;j<edges.size();j++){
+				if (this->isInside(v0.x,v0.y, v1.x, v1.y, v2.x, v2.y,edges.at(j).x, edges.at(j).y)) {
+					filter_out = true;
+					break;
+				}
+			}
+			if (filter_out) {
 				continue;
 			}
-			//else if (side0 + side1 < 2 * side2 || side1 + side2 < 2 * side0 || side2 + side0 < 2 * side1) {
-			//	continue;
-			//}
-			
 			correct_indexes.push_back(indexes.at(i));
 			correct_indexes.push_back(indexes.at(i+1));
 			correct_indexes.push_back(indexes.at(i+2));
@@ -931,47 +957,114 @@ private:
 public:
 	std::vector <glm::dvec4> road_vertices;
 	std::vector<unsigned int> roadIndexes;
+	std::vector<unsigned int> debugIndexes;
+	std::vector <glm::dvec4> debugVertices;
 	std::vector<glm::dvec4> road_edges;
+	std::vector<glm::dvec4> road_left_edge;
+	std::vector<glm::dvec4> road_right_edge;
 	std::vector <glm::dvec4> reference_line_vertices;
 	std::vector <glm::dvec4> filtered_road_vertices;
 	OpenDriveDocument(std::string filePath);
 	void generateReferenceLines();
 	void generateRoads() {
 		for (int i = 0; i < this->roads.size(); i++) {
-			this->roads.at(i).generateRoad(this->road_vertices, this->roadIndexes, this->reference_line_vertices, road_edges, connection_road_ids);
+			//this->roads.at(i).generateRoad(this->road_vertices, this->roadIndexes, this->reference_line_vertices, road_left_edge, road_right_edge,
+		//		connection_road_ids);
 		}
-		bool triangulate = false;
+		this->roads.at(10).generateRoad(this->road_vertices, this->roadIndexes, this->reference_line_vertices, road_left_edge, road_right_edge,
+			connection_road_ids);
+		bool triangulate = true;
 		double dist_epsilon = 0.1;
-		/*for (int i = 0; i < this->road_vertices.size(); i++) {
-			bool add = true;
-			for (int j = i + 1; j < this->road_vertices.size(); j++) {
-				//std::cout << i << "|" << j << std::endl;
-				if (glm::distance(road_vertices.at(i), road_vertices.at(j)) < dist_epsilon) {
-					add = false;
-					break;
-				}
-			}
-			if(add)
-				filtered_road_vertices.push_back(this->road_vertices.at(i));
-		}*/
+		using Triangulation = CDT::Triangulation<double>;
+		
+		Triangulation cdt =
+			Triangulation(CDT::FindingClosestPoint::ClosestRandom, 10);
 		if(triangulate){
 			std::vector<double>  delanuator_vertices;	
 			std::vector<double>  filtered_close_delanuator_vertices;
-			
+			std::vector<CDT::V2d<double>> vertices;
+			std::vector<CDT::Edge> edges;
+			/*for (int i = 0; i < this->road_vertices.size(); i++) {
+				delanuator_vertices.push_back(this->road_vertices.at(i).x);
+				delanuator_vertices.push_back(this->road_vertices.at(i).y);
+			}*/
 			for (int i = 0; i < this->road_vertices.size(); i++) {
-				for (int j = i; j < this->road_vertices.size(); j++) {
-					if (glm::distance(road_vertices.at(i), road_vertices.at(j)) > dist_epsilon) {
-						delanuator_vertices.push_back(this->road_vertices.at(i).x);
-						delanuator_vertices.push_back(this->road_vertices.at(i).y);
-					}
+				vertices.push_back(CDT::V2d<double>::make(this->road_vertices.at(i).x, this->road_vertices.at(i).y));
+			}
+			CDT::RemoveDuplicates(vertices);
+			this->road_vertices.clear();
+			int left_start, left_end, right_start, right_end;
+			left_start = vertices.size();
+			for (int i = 0; i < this->road_left_edge.size(); i++) {
+				vertices.push_back(CDT::V2d<double>::make(this->road_left_edge.at(i).x, this->road_left_edge.at(i).y));
+				if (i>1) {
+					edges.push_back(CDT::Edge(vertices.size() - 3, vertices.size() - 2));
 				}
 			}
-
-			Delaunator d(delanuator_vertices);
+			left_end = vertices.size() - 2;
+			right_start = vertices.size();
+			for (int i = 0; i < this->road_right_edge.size(); i++) {
+				vertices.push_back( CDT::V2d<double>::make(this->road_right_edge.at(i).x, this->road_right_edge.at(i).y));
+				if (i > 1) {
+					edges.push_back(CDT::Edge(vertices.size() - 3, vertices.size() - 2));
+				}
+			}
+			right_end = vertices.size() - 2;
+			/*
+			vertices.push_back(CDT::V2d<double>::make(road_right_edge.at(0).x, road_right_edge.at(0).y));
+			vertices.push_back(CDT::V2d<double>::make(road_left_edge.at(0).x, road_left_edge.at(0).y));
+			   edges.push_back(CDT::Edge(vertices.size()-2, vertices.size()-1));
+			vertices.push_back(CDT::V2d<double>::make(road_right_edge.at(road_right_edge.size()-2).x, road_right_edge.at(road_right_edge.size()-2).y));
+			vertices.push_back(CDT::V2d<double>::make(road_left_edge.at(road_left_edge.size()-2).x, road_left_edge.at(road_left_edge.size()-2).y));
+			   edges.push_back(CDT::Edge(vertices.size()-2, vertices.size()-1));
+			   */
+			
+			edges.push_back(CDT::Edge(left_start, right_start));
+			edges.push_back(CDT::Edge(left_end, right_end));
+			for (auto v : vertices) {
+				this->debugVertices.push_back(glm::dvec4(v.x, v.y,0,1));
+			}
+			for (auto e : edges) {
+				this->debugIndexes.push_back(e.v1());
+				this->debugIndexes.push_back(e.v2());
+			}
+			//for (int i = 0; i < edges.size(); i++) {
+			//	this->roadIndexes.push_back(edges.at(i).v1());
+			//	this->roadIndexes.push_back(edges.at(i).v2());
+			//}
+			/*return;
+			this->road_vertices.clear();
+			for (int i = 0; i < vertices.size(); i++) {
+				road_vertices.push_back(glm::dvec4(vertices.at(i).x, vertices.at(i).y, 0,1));
+			}*/
+			cdt.insertVertices(vertices);
+			cdt.insertEdges(edges);
+			//cdt.eraseSuperTriangle();
+			//cdt.eraseOuterTrianglesAndHoles();
+			cdt.eraseOuterTriangles();
+			this->road_vertices.clear();
+			for (int i = 0; i < cdt.vertices.size(); i++) {
+				this->road_vertices.push_back(glm::dvec4(cdt.vertices.at(i).pos.x, cdt.vertices.at(i).pos.y, 0, 1));
+			}
+			//CDT::Edge(CDT::V2d<double>::make(1, 1), CDT::V2d<double>::make(1, 1));
+			//cdt.eraseSuperTriangle();
+			//std::vector<CDT::Vertex<double>> v = cdt.vertices;
+			
+			for (int i = 0; i < cdt.triangles.size(); i++) {
+				this->roadIndexes.push_back(cdt.triangles.at(i).vertices.at(0));
+				this->roadIndexes.push_back(cdt.triangles.at(i).vertices.at(1));
+				this->roadIndexes.push_back(cdt.triangles.at(i).vertices.at(2));
+			}
+			
+			//std::vector<CDT::Edge> e = cdt.edges;
+			//cdt.insertEdges()
+			//cdt.eraseOuterTriangles();
+			/*Delaunator d(delanuator_vertices);
 			for (int i = 0; i < d.triangles.size(); i++) {
 				roadIndexes.push_back(d.triangles.at(i));
 			}
-			this->roadIndexes = this->filterOutDegeneratedTriangles(this->roadIndexes, this->road_vertices);
+			
+			this->roadIndexes = this->filterOutDegeneratedTriangles(this->roadIndexes, this->road_vertices, this->road_edges);*/
 		}
 	}
 	void printOpenDriveDocument();

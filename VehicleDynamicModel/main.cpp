@@ -20,16 +20,16 @@ int main(int argc, char** argv)
 		generate_gaps = int(argv[2]);
 	}
 	OpenDriveDocument odd = OpenDriveDocument(openDriveFilePath);
-	try {
+	//try {
 		odd.parseOpenDriveDocument();
 		//odd.generateReferenceLines();
 		odd.generateRoads();
-	}
-	catch (std::exception e)
-	{
-		std::cerr << "Error: " << e.what() << std::endl;
-		return -1;
-	}
+	//}
+	//catch (std::exception e)
+	//{
+	//	std::cerr << "Error: " << e.what() << std::endl;
+	//	return -1;
+	//}
 	
 	
 	Renderer renderer;
@@ -45,21 +45,29 @@ int main(int argc, char** argv)
 		verticesObjects.push_back(obj);
 	}
 
-	VerticesObject* obj = new VerticesObject(odd.road_vertices, GL_POINTS, glm::dvec4(0, 0.7, 0, 1));
+	VerticesObject* obj = new VerticesObject(odd.road_vertices, GL_TRIANGLES, glm::dvec4(0, 0.7, 0, 1));
 	obj->generateVBO();
-	verticesObjects.push_back(obj);
+	///verticesObjects.push_back(obj);
 
 	VerticesObject* robj = new VerticesObject(odd.reference_line_vertices, GL_LINE_STRIP, glm::dvec4(1,0,0,1));
 	robj->generateVBO();
 	//verticesObjects.push_back(robj);
 
-	VerticesObject* reobj = new VerticesObject(odd.road_edges, GL_POINTS, glm::dvec4(1, 1, 0, 1));
+	VerticesObject* reobj = new VerticesObject(odd.road_right_edge, GL_LINE_STRIP, glm::dvec4(1, 1, 0, 1));
 	reobj->generateVBO();
-	verticesObjects.push_back(reobj);
+	//verticesObjects.push_back(reobj);
+
+	VerticesObject* rvobj = new VerticesObject(odd.road_vertices, GL_POINTS, glm::dvec4(238.0 / 255.0, 130.0 / 255.0, 238.0 / 255.0, 1));
+	rvobj->generateVBO();
+	//verticesObjects.push_back(rvobj);
 
 	IndexedVerticesObject* iobj = new IndexedVerticesObject(odd.road_vertices, odd.roadIndexes, GL_TRIANGLES);
 	iobj->generateVBO();
-	//indexedVerticesObjects.push_back(iobj);
+	indexedVerticesObjects.push_back(iobj);
+
+	IndexedVerticesObject* idobj = new IndexedVerticesObject(odd.debugVertices, odd.debugIndexes, GL_LINES, glm::dvec4(238.0 / 255.0, 130.0 / 255.0, 238.0 / 255.0, 1));
+	idobj->generateVBO();
+	indexedVerticesObjects.push_back(idobj);
 	double gap = 5.0;
 	
 	if(generate_gaps){

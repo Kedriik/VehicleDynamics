@@ -160,6 +160,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\tinyxml2\tinyxml2.cpp" />
+    <ClCompile Include="CDT\src\CDT.cpp" />
     <ClCompile Include="delaunator.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="OpenDriveDocument.cpp" />
@@ -170,6 +171,13 @@
   <ItemGroup>
     <ClInclude Include="..\Renderer\DebugDraw.h" />
     <ClInclude Include="..\tinyxml2\tinyxml2.h" />
+    <ClInclude Include="CDT\include\CDT.h" />
+    <ClInclude Include="CDT\include\CDT.hpp" />
+    <ClInclude Include="CDT\include\CDTUtils.h" />
+    <ClInclude Include="CDT\include\CDTUtils.hpp" />
+    <ClInclude Include="CDT\include\PointRTree.h" />
+    <ClInclude Include="CDT\include\predicates.h" />
+    <ClInclude Include="CDT\include\remove_at.hpp" />
     <ClInclude Include="delaunator.h" />
     <ClInclude Include="earcut.hpp" />
     <ClInclude Include="OpenDriveDocument.h" />

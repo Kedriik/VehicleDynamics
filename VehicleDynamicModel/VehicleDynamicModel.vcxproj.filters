@@ -36,6 +36,9 @@
     <ClCompile Include="delaunator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="CDT\src\CDT.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Renderer\DebugDraw.h">
@@ -60,6 +63,27 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="delaunator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CDT\include\CDT.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CDT\include\CDT.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CDT\include\CDTUtils.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CDT\include\CDTUtils.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CDT\include\PointRTree.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CDT\include\predicates.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CDT\include\remove_at.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
