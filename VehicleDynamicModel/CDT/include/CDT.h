@@ -418,8 +418,11 @@ void Triangulation<T>::insertVertices(
     if(vertices.empty())
         addSuperTriangle(envelopBox<T>(first, last, getX, getY));
     vertices.reserve(vertices.size() + std::distance(first, last));
-    for(; first != last; ++first)
-        insertVertex(V2d<T>::make(getX(*first), getY(*first)));
+    for (; first != last; ++first) {
+        V2d v = V2d<T>::make(getX(*first), getY(*first));
+        v.z = first->z;
+        insertVertex(v);
+    }
 }
 
 template <typename T>
