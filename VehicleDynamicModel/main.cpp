@@ -45,7 +45,7 @@ int main(int argc, char** argv)
 		verticesObjects.push_back(obj);
 	}
 
-	VerticesObject* obj = new VerticesObject(odd.road_vertices, GL_TRIANGLES, glm::dvec4(0, 0.7, 0, 1));
+	/*VerticesObject* obj = new VerticesObject(odd.road_vertices, GL_TRIANGLES, glm::dvec4(0, 0.7, 0, 1));
 	obj->generateVBO();
 	///verticesObjects.push_back(obj);
 
@@ -64,7 +64,11 @@ int main(int argc, char** argv)
 	IndexedVerticesObject* iobj = new IndexedVerticesObject(odd.road_vertices, odd.roadIndexes, GL_TRIANGLES);
 	iobj->generateVBO();
 	indexedVerticesObjects.push_back(iobj);
-
+	*/
+	for (auto ro : odd.roadRenderObjects) {
+		ro->generateVBO();
+		indexedVerticesObjects.push_back(ro);
+	}
 	IndexedVerticesObject* idobj = new IndexedVerticesObject(odd.debugVertices, odd.debugIndexes, GL_LINES, glm::dvec4(238.0 / 255.0, 130.0 / 255.0, 238.0 / 255.0, 1));
 	idobj->generateVBO();
 	indexedVerticesObjects.push_back(idobj);
