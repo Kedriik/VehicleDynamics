@@ -43,6 +43,10 @@ int main(int argc, char** argv)
 		VerticesObject * obj = new VerticesObject(r.getReferencePoints(), GL_LINE_STRIP,glm::vec4(1,0,0,1));
 		obj->generateVBO();
 		verticesObjects.push_back(obj);
+
+		obj = new VerticesObject(r._vertices, GL_POINTS, glm::vec4(0, 1, 0, 1));
+		obj->generateVBO();
+		verticesObjects.push_back(obj);
 	}
 
 	/*VerticesObject* obj = new VerticesObject(odd.road_vertices, GL_TRIANGLES, glm::dvec4(0, 0.7, 0, 1));
@@ -65,13 +69,19 @@ int main(int argc, char** argv)
 	iobj->generateVBO();
 	indexedVerticesObjects.push_back(iobj);
 	*/
+	for (auto r : odd.getRoads()) {
+		IndexedVerticesObject* idobj = new IndexedVerticesObject(r.debugVertices, r.debugIndexes, GL_LINES, glm::dvec4(238.0 / 255.0, 130.0 / 255.0, 238.0 / 255.0, 1));
+		idobj->generateVBO();
+		indexedVerticesObjects.push_back(idobj);
+	}
 	for (auto ro : odd.roadRenderObjects) {
 		ro->generateVBO();
 		indexedVerticesObjects.push_back(ro);
+		
 	}
-	IndexedVerticesObject* idobj = new IndexedVerticesObject(odd.debugVertices, odd.debugIndexes, GL_LINES, glm::dvec4(238.0 / 255.0, 130.0 / 255.0, 238.0 / 255.0, 1));
-	idobj->generateVBO();
-	indexedVerticesObjects.push_back(idobj);
+	
+	//idobj->generateVBO();
+	//indexedVerticesObjects.push_back(idobj);
 	double gap = 5.0;
 	
 	if(generate_gaps){

@@ -271,7 +271,7 @@ struct Geometry {
 		if (_length < 0) throw new std::exception("length cannot be negative");
 		s = _s;
 		length = _length;
-		n_vertices = (int(length) + 1)/2;
+		n_vertices = (int(length) + 1);
 	}
 	double s;
 	double x;
@@ -283,6 +283,7 @@ struct Geometry {
 	std::string name;
 	std::vector<glm::dvec4> vertices;
 	virtual void generateReferenceLine() = 0;
+	virtual glm::dvec4 generatePosition(double s) = 0;
 };
 struct line :Geometry {
 	line(double _s, double _x, double _y, double _hdg, double _length) :
@@ -297,6 +298,14 @@ struct line :Geometry {
 			position.z = 0;
 			this->vertices.push_back(position);
 		}
+	}
+	glm::dvec4 generatePosition(double s) {
+		if (s > this->length) s = this->length;
+		glm::dvec4 position;
+		position.x = this->x + cos(this->hdg) * s;
+		position.y = this->y + sin(this->hdg) * s;
+		position.z = 0;
+		return position;
 	}
 };
 struct spiral :Geometry {
@@ -328,6 +337,24 @@ public:
 		double dot = normalized.x * OX.x + normalized.y * OX.y;
 		double det = normalized.x * OX.y - normalized.y * OX.x;
 		this->angleOffset = atan2(det, dot);
+	}
+	glm::dvec4 transformAndReturnVertex(double x, double y, double x_origin, double y_origin) {
+		glm::dvec4 position;
+		glm::dvec3 origin;
+		origin.x = 0;
+		origin.y = 0;
+		origin.z = 1;
+		position.x = x;
+		position.y = y;
+		position.z = 0;
+		position.w = 1;
+		position.x -= x_origin;
+		position.y -= y_origin;
+		glm::dquat rotate = glm::angleAxis(this->hdg + this->angleOffset, origin);
+		position = rotate * position;
+		position.x += this->x;
+		position.y += this->y;
+		return position;
 	}
 	void transformAndAddVertex(double x, double y, double x_origin, double y_origin) {
 		glm::dvec4 position;
@@ -473,10 +500,139 @@ public:
 
 		}
 	}
+
+	glm::dvec4 generatePosition(double s) {
+		if (s > this->length) s = this->length;
+		double  a = 0;
+		int n_integral = 1000;
+		double x;
+		double y;
+		double start_curvature, end_curvature;
+		bool reversed = false;
+		int direction = 1;
+		if (this->curvEnd != 0 && this->curvStart == 0) {
+			int dir = 1;
+			if (this->curvEnd < 0) {
+				dir = -1;
+			}
+			a = 1 / (sqrt(2 * (1 / abs(this->curvEnd)) * this->length));
+			double step = this->length / this->n_vertices;
+			for (int i = 0; i <= this->n_vertices; i++) {
+				x = (1 / a) * trapezoidalIntegral(OpenDriveMath::fx, 0.0, a * s, n_integral);
+				y = dir * (1 / a) * trapezoidalIntegral(OpenDriveMath::fy, 0.0, a *s, n_integral);
+				return this->transformAndReturnVertex(x, y, 0, 0);
+			}
+		}
+		else if (this->curvEnd == 0 && this->curvStart != 0) {
+
+			a = 1 / (sqrt(2 * (1 / abs(this->curvStart)) * this->length));
+			double dir = 1;
+			if (this->curvStart < 0) {
+				dir = -1;
+			}
+			double step = this->length / this->n_vertices;
+			double ds = 0.001;
+			double x_origin = (1 / a) * trapezoidalIntegral(OpenDriveMath::fx, 0.0, -a * this->length, n_integral);
+			double y_origin = dir * (1 / a) * trapezoidalIntegral(OpenDriveMath::fy, 0.0, a * this->length, n_integral);
+			double x_origin_d = (1 / a) * trapezoidalIntegral(OpenDriveMath::fx, 0.0, -a * (this->length - ds), n_integral);
+			double y_origin_d = dir * (1 / a) * trapezoidalIntegral(OpenDriveMath::fy, 0.0, a * (this->length - ds), n_integral);
+			this->calcAngleOffset(x_origin, y_origin, x_origin_d, y_origin_d);
+			for (int i = 0; i <= this->n_vertices; i++) {
+				x = (1 / a) * trapezoidalIntegral(OpenDriveMath::fx, 0.0, -a * (this->length - s), n_integral);
+				y = dir * (1 / a) * trapezoidalIntegral(OpenDriveMath::fy, 0.0, a * (this->length - s), n_integral);
+				return this->transformAndReturnVertex(x, y, x_origin, y_origin);
+			}
+		}
+		else if (glm::sign(this->curvEnd) != glm::sign(this->curvStart)) {
+			double adjusted_len = this->length / 2;
+
+			double step = adjusted_len / this->n_vertices;
+			a = 1 / (sqrt(2 * (1 / abs(this->curvStart)) * adjusted_len));
+			int dir_ys = 1;
+			int dir_ye = 1;
+			if (this->curvStart < 0) {
+				dir_ys = -1;
+			}
+			if (this->curvEnd < 0) {
+				dir_ye = -1;
+			}
+
+			double ds = 0.0001;
+			double x_origin = (1 / a) * trapezoidalIntegral(OpenDriveMath::fx, 0.0, -a * adjusted_len, n_integral);
+			double y_origin = dir_ys * (1 / a) * trapezoidalIntegral(OpenDriveMath::fy, 0.0, a * adjusted_len, n_integral);
+			double x_origin_d = (1 / a) * trapezoidalIntegral(OpenDriveMath::fx, 0.0, -a * (adjusted_len - ds), n_integral);
+			double y_origin_d = dir_ys * (1 / a) * trapezoidalIntegral(OpenDriveMath::fy, 0.0, a * (adjusted_len - ds), n_integral);
+			this->calcAngleOffset(x_origin, y_origin, x_origin_d, y_origin_d);
+			for (int i = 0; i <= this->n_vertices; i++) {
+				x = (1 / a) * trapezoidalIntegral(OpenDriveMath::fx, 0.0, -a * (adjusted_len - s), n_integral);
+				y = dir_ys * (1 / a) * trapezoidalIntegral(OpenDriveMath::fy, 0.0, a * (adjusted_len - s), n_integral);
+				return this->transformAndReturnVertex(x, y, x_origin, y_origin);
+			}
+
+			a = 1 / (sqrt(2 * (1 / abs(this->curvEnd)) * adjusted_len));
+			for (int i = 0; i <= this->n_vertices; i++) {
+				x = (1 / a) * trapezoidalIntegral(OpenDriveMath::fx, 0.0, a * s, n_integral);
+				y = dir_ye * (1 / a) * trapezoidalIntegral(OpenDriveMath::fy, 0.0, a * s, n_integral);
+				return this->transformAndReturnVertex(x, y, x_origin, y_origin);
+			}
+		}
+		else {
+			double direction = 1;
+			if (abs(this->curvEnd) > abs(this->curvStart)) {
+				start_curvature = abs(this->curvStart);
+				end_curvature = abs(this->curvEnd);
+				if (this->curvEnd < 0) {
+					direction = -1;
+				}
+			}
+			else {
+				start_curvature = abs(this->curvEnd);
+				end_curvature = abs(this->curvStart);
+				if (this->curvStart > 0) {
+					direction = -1;
+				}
+				reversed = true;
+			}
+
+
+			double L0 = 0;
+			if (start_curvature != 0) {
+				L0 = ((1 / end_curvature) * this->length) / abs(((1 / start_curvature) - (1 / end_curvature)));
+			}
+			double total_len = this->length + L0;
+			a = 1 / (sqrt(2 * (1 / abs(end_curvature)) * (total_len)));
+			double step = this->length / this->n_vertices;
+			double x_origin = 0, y_origin = 0, x_origin_d = 0, y_origin_d = 0;
+			double ds = 0.1;
+
+			if (reversed) {
+				x_origin = (1 / a) * trapezoidalIntegral(OpenDriveMath::fx, 0.0, a * (total_len), n_integral);
+				y_origin = direction * (1 / a) * trapezoidalIntegral(OpenDriveMath::fy, 0.0, a * (total_len), n_integral);
+				x_origin_d = (1 / a) * trapezoidalIntegral(OpenDriveMath::fx, 0.0, a * (total_len - ds), n_integral);
+				y_origin_d = direction * (1 / a) * trapezoidalIntegral(OpenDriveMath::fy, 0.0, a * (total_len - ds), n_integral);
+			}
+			else {
+				x_origin = (1 / a) * trapezoidalIntegral(OpenDriveMath::fx, 0.0, a * (L0), n_integral);
+				y_origin = direction * (1 / a) * trapezoidalIntegral(OpenDriveMath::fy, 0.0, a * (L0), n_integral);
+				x_origin_d = (1 / a) * trapezoidalIntegral(OpenDriveMath::fx, 0.0, a * (L0 + ds), n_integral);
+				y_origin_d = direction * (1 / a) * trapezoidalIntegral(OpenDriveMath::fy, 0.0, a * (L0 + ds), n_integral);
+			}
+			this->calcAngleOffset(x_origin, y_origin, x_origin_d, y_origin_d);
+			for (double i = 0; i <= this->n_vertices; i++) {
+				x = (1 / a) * trapezoidalIntegral(OpenDriveMath::fx, 0.0, a * (s + L0), n_integral);
+				y = direction * (1 / a) * trapezoidalIntegral(OpenDriveMath::fy, 0.0, a * (s + L0), n_integral);
+
+				return this->transformAndReturnVertex(x, y, x_origin, y_origin);
+			}
+			
+		}
+
+	}
 };
 struct arc:Geometry {
 	arc(double _curvature, double _s, double _x, double _y, double _hdg, double _length) :
 		curvature(_curvature), Geometry(_s, _x, _y, _hdg, _length) {
+		//n_vertices = (int(length) + 1);
 	}
 	double curvature;
 	void generateReferenceLine()override {
@@ -489,6 +645,15 @@ struct arc:Geometry {
 			position.z = 0;
 			this->vertices.push_back(position);
 		}
+	}
+	glm::dvec4 generatePosition(double s) {
+		if (s > this->length) s = this->length;
+		glm::dvec4 position;
+		double fi = s * this->curvature + this->hdg;
+		position.x = (1.0 / this->curvature) * (sin(fi) - sin(this->hdg)) + this->x;
+		position.y = (1.0 / this->curvature) * (cos(this->hdg) - cos(fi)) + this->y;
+		position.z = 0;
+		return position;
 	}
 };
 struct poly3 :Geometry {
@@ -633,7 +798,6 @@ namespace Lanes {
 		RoadMark() {}
 	};
 }
-
 struct LaneSection:SBasedProperty {
 	double s;
 	std::optional<bool> singleSide = std::optional<bool>();
@@ -699,7 +863,6 @@ struct LaneSection:SBasedProperty {
 		Lanes::Center defaultCenter = Lanes::Center();
 	}
 };
-
 struct lanes:SBasedProperty {
 	std::vector<LaneSection> laneSections;
 	lanes(std::vector<LaneSection> _laneSections):laneSections(_laneSections){}
@@ -722,6 +885,10 @@ struct LineSegment {
 };
 class Road {
 	friend class OpenDriveDocument;
+public:
+	std::vector<unsigned int> debugIndexes;
+	std::vector <glm::dvec4> debugVertices;
+	std::vector <glm::dvec4> _vertices;
 private:
 	double length;
 	std::string id;
@@ -753,16 +920,119 @@ private:
 			g->generateReferenceLine();
 			std::vector<glm::dvec4> referenceLineCoordinates = g->vertices;
 			double step_ds = g->length / referenceLineCoordinates.size();
-			if(i< this->planView.geometries.size()-1){
+			double epsilon = 0.05;
+
+			for (int j = 0; j < referenceLineCoordinates.size(); j++) {
+				double s_start;
+				double s_end;
+				glm::dvec4 positionStart;
+				glm::dvec4 positionEnd;
+				if (j == 0) {
+					s_start = 0;
+					s_end = epsilon;
+					positionStart = referenceLineCoordinates.at(0);
+					positionEnd = g->generatePosition(s_end);
+				}
+				else if (j== referenceLineCoordinates.size()-1) {
+					s_start = g->length;
+					s_end = g->s + j * step_ds;
+					positionStart = referenceLineCoordinates.at(j);
+					positionEnd = g->generatePosition(s_end);
+				}
+				else {
+					s_start = g->s + j * step_ds;
+					s_end = g->s + (j + 1) * step_ds;
+					positionStart = referenceLineCoordinates.at(j);
+					positionEnd = referenceLineCoordinates.at(j + 1);
+				}
+
+				Elevation elevation_start = ep.getCurrentElevation(s_start);
+				Elevation elevation_end = ep.getCurrentElevation(s_end);
+				Superelevation superelevation_start = lp.getCurrentSuperelevation(s_start);
+				Superelevation superelevation_end = lp.getCurrentSuperelevation(s_end);
+				//a + b*ds + c*ds² + d*ds³
+				double ds_start = s_start - elevation_start.s;
+				double ds_end = s_end - elevation_end.s;
+
+				positionStart.z = elevation_start.a + elevation_start.b * ds_start + elevation_start.c * std::pow(ds_start, 2) + elevation_start.d * std::pow(ds_start, 3);
+				ds_start = s_start - superelevation_start.s;
+				positionStart.w = superelevation_start.a + superelevation_start.b * ds_start + superelevation_start.c * std::pow(ds_start, 2) + superelevation_start.d * std::pow(ds_start, 3);
+
+				positionEnd.z = elevation_end.a + elevation_end.b * ds_end + elevation_end.c * std::pow(ds_end, 2) + elevation_end.d * std::pow(ds_end, 3);
+				ds_end = s_end - superelevation_end.s;
+				positionEnd.w = superelevation_end.a + superelevation_end.b * ds_end + superelevation_end.c * std::pow(ds_end, 2) + superelevation_end.d * std::pow(ds_end, 3);
+				referenceLinePoints.push_back(positionStart);
+				glm::dvec3 up = glm::dvec3(0, 0, 1);
+				glm::dvec3 s_direction = glm::dvec3(glm::normalize(positionEnd - positionStart));
+				if (j == referenceLineCoordinates.size() - 1) {
+					s_direction *= -1;
+				}
+				glm::dquat superelevation_rotation = glm::angleAxis(positionStart.w, glm::dvec3(s_direction));
+				glm::dvec3 left_direction = superelevation_rotation * glm::normalize(glm::cross(up, s_direction));
+				glm::dvec3 right_direction = superelevation_rotation * glm::normalize(glm::cross(s_direction, up));
+				LaneSection laneSection = this->roadLanes.getCurrentLaneSection(s_start);
+				if (laneSection.right.has_value()) {
+					Lanes::Right right = laneSection.right.value();
+					for (int i = 0; i < right.lane.size(); i++) {
+						double innerW, outerW;
+						laneSection.getCurrentRightWidth(s_start, -(i + 1), innerW, outerW);
+						glm::dvec3 innerPos = glm::dvec3(positionStart) + right_direction * innerW;
+						glm::dvec3 outerPos = glm::dvec3(positionStart) + right_direction * outerW;
+						LineSegment lineSegment = LineSegment();
+						int n_points = int((outerW - innerW) / 2 + 1);
+						double t_ds = (outerW - innerW) / n_points;
+						glm::dvec3 t_dir = glm::normalize(outerPos - innerPos);
+						if (std::find(connection_road_ids.begin(), connection_road_ids.end(), this->id) == connection_road_ids.end()) {
+							if (right.lane.size() - 1 == i)
+								road_right_edges.push_back(glm::dvec4(innerPos + t_dir * t_ds * double(n_points + edge_epsilon), 0.0));
+							for (int i = 0; i < n_points; i++) {
+								vertices.push_back(glm::dvec4(innerPos + t_dir * t_ds * double(i), 0.0));
+							}
+						}
+					}
+				}
+				if (laneSection.left.has_value()) {
+					Lanes::Left left = laneSection.left.value();
+					for (int i = 0; i < left.lane.size(); i++) {
+						double innerW, outerW;
+						laneSection.getCurrentLeftWidth(s_start, i + 1, innerW, outerW);
+						glm::dvec3 innerPos = glm::dvec3(positionStart) + left_direction * innerW;
+						glm::dvec3 outerPos = glm::dvec3(positionStart) + left_direction * outerW;
+						LineSegment lineSegment = LineSegment();
+						int n_points = int((outerW - innerW) / 2 + 1);
+						double t_ds = (outerW - innerW) / n_points;
+						glm::dvec3 t_dir = glm::normalize(outerPos - innerPos);
+						if (std::find(connection_road_ids.begin(), connection_road_ids.end(), this->id) == connection_road_ids.end()) {
+							if (i == left.lane.size() - 1)
+								road_left_edges.push_back(glm::dvec4(innerPos + t_dir * t_ds * double(n_points + edge_epsilon), 0.0));
+							for (int i = 0; i < n_points; i++) {
+								vertices.push_back(glm::dvec4(innerPos + t_dir * t_ds * double(i), 0.0));
+							}
+						}
+					}
+				}
+			}
+			_vertices = vertices;
+			return;
+			/**/
+			if(i> 0&& i<this->planView.geometries.size()-1){
 				for (int j = 0; j < referenceLineCoordinates.size()-1; j++) {
 					double s_start;
 					double s_end;
 					glm::dvec4 positionStart;
 					glm::dvec4 positionEnd;
-					s_start = g->s + j * step_ds;
-					s_end = g->s + (j + 1) * step_ds;
-					positionStart = referenceLineCoordinates.at(j);
-					positionEnd = referenceLineCoordinates.at(j + 1);
+					/*if (i == 0 && j == 0) {
+						s_start = 0;
+						s_end = epsilon;
+						positionStart = referenceLineCoordinates.at(0);
+						positionEnd = g->generatePosition(s_end);
+					}else{*/
+						s_start = g->s + j * step_ds;
+						s_end = g->s + (j + 1) * step_ds;
+						positionStart = referenceLineCoordinates.at(j);
+						positionEnd = referenceLineCoordinates.at(j + 1);
+					//}
+
 					Elevation elevation_start = ep.getCurrentElevation(s_start);
 					Elevation elevation_end = ep.getCurrentElevation(s_end);
 					Superelevation superelevation_start = lp.getCurrentSuperelevation(s_start);
@@ -779,10 +1049,8 @@ private:
 					ds_end = s_end - superelevation_end.s;
 					positionEnd.w = superelevation_end.a + superelevation_end.b * ds_end + superelevation_end.c * std::pow(ds_end, 2) + superelevation_end.d * std::pow(ds_end, 3);
 					referenceLinePoints.push_back(positionStart);
-				
 					glm::dvec3 up = glm::dvec3(0,0,1);
 					glm::dvec3 s_direction = glm::dvec3(glm::normalize(positionEnd - positionStart));
-				
 					glm::dquat superelevation_rotation = glm::angleAxis(positionStart.w, glm::dvec3(s_direction));
 					glm::dvec3 left_direction = superelevation_rotation*glm::normalize(glm::cross(up,s_direction));
 					glm::dvec3 right_direction = superelevation_rotation*glm::normalize(glm::cross(s_direction,up));
@@ -829,13 +1097,13 @@ private:
 					}
 				}
 			}
-			else {
+			else if(i ==  this->planView.geometries.size() - 1){
 				for (int j = 0; j < referenceLineCoordinates.size() ; j++) {
 					double s_start;
 					double s_end;
 					glm::dvec4 positionStart;
 					glm::dvec4 positionEnd;
-					if (j < referenceLineCoordinates.size() - 1) {
+					if (j != referenceLineCoordinates.size() - 1) {
 						s_start = g->s + j * step_ds;
 						s_end = g->s + (j + 1) * step_ds;
 						positionStart = referenceLineCoordinates.at(j);
@@ -843,9 +1111,9 @@ private:
 					}
 					else {
 						s_start = g->s + j * step_ds;
-						s_end = g->s + (j - 1) * step_ds;
+						s_end = g->length;
 						positionStart = referenceLineCoordinates.at(j);
-						positionEnd = referenceLineCoordinates.at(j - 1);
+						positionEnd = g->generatePosition(s_end);
 					}
 					Elevation elevation_start = ep.getCurrentElevation(s_start);
 					Elevation elevation_end = ep.getCurrentElevation(s_end);
@@ -915,6 +1183,93 @@ private:
 					}
 				}
 			}
+			else if (i == 0) {
+				for (int j = 0; j < referenceLineCoordinates.size()-1; j++) {
+					double s_start;
+					double s_end;
+					glm::dvec4 positionStart;
+					glm::dvec4 positionEnd;
+					if (j!=0) {
+						s_start = g->s + j * step_ds;
+						s_end = g->s + (j + 1) * step_ds;
+						positionStart = referenceLineCoordinates.at(j);
+						positionEnd = referenceLineCoordinates.at(j + 1);
+					}
+					else {
+						s_start = 0;
+						s_end = epsilon;
+						positionStart = referenceLineCoordinates.at(0);
+						positionEnd = g->generatePosition(s_end);
+					}
+					Elevation elevation_start = ep.getCurrentElevation(s_start);
+					Elevation elevation_end = ep.getCurrentElevation(s_end);
+					Superelevation superelevation_start = lp.getCurrentSuperelevation(s_start);
+					Superelevation superelevation_end = lp.getCurrentSuperelevation(s_end);
+					//a + b*ds + c*ds² + d*ds³
+					double ds_start = s_start - elevation_start.s;
+					double ds_end = s_end - elevation_end.s;
+
+					positionStart.z = elevation_start.a + elevation_start.b * ds_start + elevation_start.c * std::pow(ds_start, 2) + elevation_start.d * std::pow(ds_start, 3);
+					ds_start = s_start - superelevation_start.s;
+					positionStart.w = superelevation_start.a + superelevation_start.b * ds_start + superelevation_start.c * std::pow(ds_start, 2) + superelevation_start.d * std::pow(ds_start, 3);
+
+					positionEnd.z = elevation_end.a + elevation_end.b * ds_end + elevation_end.c * std::pow(ds_end, 2) + elevation_end.d * std::pow(ds_end, 3);
+					ds_end = s_end - superelevation_end.s;
+					positionEnd.w = superelevation_end.a + superelevation_end.b * ds_end + superelevation_end.c * std::pow(ds_end, 2) + superelevation_end.d * std::pow(ds_end, 3);
+					referenceLinePoints.push_back(positionStart);
+
+					glm::dvec3 up = glm::dvec3(0, 0, 1);
+					glm::dvec3 s_direction = glm::dvec3(glm::normalize(positionEnd - positionStart));
+					if (j == referenceLineCoordinates.size() - 1) {
+						s_direction *= -1;
+					}
+					glm::dquat superelevation_rotation = glm::angleAxis(positionStart.w, glm::dvec3(s_direction));
+					glm::dvec3 left_direction = superelevation_rotation * glm::normalize(glm::cross(up, s_direction));
+					glm::dvec3 right_direction = superelevation_rotation * glm::normalize(glm::cross(s_direction, up));
+					LaneSection laneSection = this->roadLanes.getCurrentLaneSection(s_start);
+					if (laneSection.right.has_value()) {
+						Lanes::Right right = laneSection.right.value();
+						for (int i = 0; i < right.lane.size(); i++) {
+							double innerW, outerW;
+							laneSection.getCurrentRightWidth(s_start, -(i + 1), innerW, outerW);
+							glm::dvec3 innerPos = glm::dvec3(positionStart) + right_direction * innerW;
+							glm::dvec3 outerPos = glm::dvec3(positionStart) + right_direction * outerW;
+							LineSegment lineSegment = LineSegment();
+							int n_points = int((outerW - innerW) / 2 + 1);
+							double t_ds = (outerW - innerW) / n_points;
+							glm::dvec3 t_dir = glm::normalize(outerPos - innerPos);
+							if (std::find(connection_road_ids.begin(), connection_road_ids.end(), this->id) == connection_road_ids.end()) {
+								if (right.lane.size() - 1 == i)
+									road_right_edges.push_back(glm::dvec4(innerPos + t_dir * t_ds * double(n_points + edge_epsilon), 0.0));
+								for (int i = 0; i < n_points; i++) {
+									vertices.push_back(glm::dvec4(innerPos + t_dir * t_ds * double(i), 0.0));
+								}
+							}
+						}
+					}
+					if (laneSection.left.has_value()) {
+						Lanes::Left left = laneSection.left.value();
+						for (int i = 0; i < left.lane.size(); i++) {
+							double innerW, outerW;
+							laneSection.getCurrentLeftWidth(s_start, i + 1, innerW, outerW);
+							glm::dvec3 innerPos = glm::dvec3(positionStart) + left_direction * innerW;
+							glm::dvec3 outerPos = glm::dvec3(positionStart) + left_direction * outerW;
+							LineSegment lineSegment = LineSegment();
+							int n_points = int((outerW - innerW) / 2 + 1);
+							double t_ds = (outerW - innerW) / n_points;
+							glm::dvec3 t_dir = glm::normalize(outerPos - innerPos);
+							if (std::find(connection_road_ids.begin(), connection_road_ids.end(), this->id) == connection_road_ids.end()) {
+								if (i == left.lane.size() - 1)
+									road_left_edges.push_back(glm::dvec4(innerPos + t_dir * t_ds * double(n_points + edge_epsilon), 0.0));
+								for (int i = 0; i < n_points; i++) {
+									vertices.push_back(glm::dvec4(innerPos + t_dir * t_ds * double(i), 0.0));
+								}
+							}
+						}
+					}
+				}
+			}
+
 			//referenceLinePoints.push_back(referenceLineCoordinates.at(referenceLineCoordinates.size()-1));
 		}
 	}
@@ -970,56 +1325,7 @@ private:
 	std::vector<Road> roads;
 	std::vector<std::string> connection_road_ids;
 	tinyxml2::XMLDocument doc;
-	double area(double x1, double y1, double x2, double y2, double x3, double y3)
-	{
-		return abs((x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2)) / 2.0);
-	}
 
-	/* A function to check whether point P(x, y) lies inside the triangle formed
-	   by A(x1, y1), B(x2, y2) and C(x3, y3) */
-	bool isInside(double x1, double y1, double x2, double y2, double x3, double y3, double x, double y)
-	{
-		/* Calculate area of triangle ABC */
-		double A = area(x1, y1, x2, y2, x3, y3);
-
-		/* Calculate area of triangle PBC */
-		double A1 = area(x, y, x2, y2, x3, y3);
-
-		/* Calculate area of triangle PAC */
-		double A2 = area(x1, y1, x, y, x3, y3);
-
-		/* Calculate area of triangle PAB */
-		double A3 = area(x1, y1, x2, y2, x, y);
-
-		/* Check if sum of A1, A2 and A3 is same as A */
-		return (A == A1 + A2 + A3);
-	}
-	std::vector<unsigned int> filterOutDegeneratedTriangles(std::vector<unsigned int>&indexes,
-		std::vector<glm::dvec4>& vertices, std::vector<glm::dvec4>& edges) {
-		std::vector<unsigned int> correct_indexes;
-		double alpha = 2;
-		for (int i = 0; i < indexes.size()-3; i += 3) {
-			//check polygon, 3 vertices
-			glm::dvec3 v0 = glm::dvec3(vertices.at(indexes.at(i)));
-			glm::dvec3 v1 = glm::dvec3(vertices.at(indexes.at(i+1)));
-			glm::dvec3 v2 = glm::dvec3(vertices.at(indexes.at(i+2)));
-			bool filter_out = false;
-			for(int j=0;j<edges.size();j++){
-				if (this->isInside(v0.x,v0.y, v1.x, v1.y, v2.x, v2.y,edges.at(j).x, edges.at(j).y)) {
-					filter_out = true;
-					break;
-				}
-			}
-			if (filter_out) {
-				continue;
-			}
-			correct_indexes.push_back(indexes.at(i));
-			correct_indexes.push_back(indexes.at(i+1));
-			correct_indexes.push_back(indexes.at(i+2));
-			
-		}
-		return correct_indexes;
-	}
 	Link createLink(tinyxml2::XMLElement* xml_road);
 	template <class T>
 	void populateCessor(tinyxml2::XMLElement* xml_cessor, T& cessor);
@@ -1051,8 +1357,7 @@ private:
 public:
 	
 	
-	std::vector<unsigned int> debugIndexes;
-	std::vector <glm::dvec4> debugVertices;
+
 	std::vector<glm::dvec4> road_edges;
 
 	std::vector <glm::dvec4> reference_line_vertices;
@@ -1066,6 +1371,8 @@ public:
 			double dist_epsilon = 0.1;
 			std::vector <glm::dvec4> road_vertices;
 			std::vector<unsigned int> roadIndexes;
+			std::vector<unsigned int> debugIndexes;
+			std::vector <glm::dvec4> debugVertices;
 			std::vector<glm::dvec4> road_left_edge;
 			std::vector<glm::dvec4> road_right_edge;
 			this->roads.at(i).generateRoad(road_vertices, roadIndexes, reference_line_vertices, road_left_edge, road_right_edge,
@@ -1109,12 +1416,14 @@ public:
 			edges.push_back(CDT::Edge(left_end, right_end));
 
 			for (auto v : vertices) {
-				this->debugVertices.push_back(glm::dvec4(v.x, v.y, v.z, 1));
+				debugVertices.push_back(glm::dvec4(v.x, v.y, v.z, 1));
 			}
 			for (auto e : edges) {
-				this->debugIndexes.push_back(e.v1());
-				this->debugIndexes.push_back(e.v2());
+				debugIndexes.push_back(e.v1());
+				debugIndexes.push_back(e.v2());
 			}
+			this->roads.at(i).debugIndexes = debugIndexes;
+			this->roads.at(i).debugVertices = debugVertices;
 			using Triangulation = CDT::Triangulation<double>;
 
 			Triangulation cdt =

@@ -348,6 +348,7 @@ public:
 		camera.setForward(vec3(0, 0, -1));
 		ViewMatrix = camera.cameraPositionKeyboard(0);
 		this->initLoopObjects();
+		
 		GLuint drawMode = GL_FILL;
 		double iddleTime = 0;
 		do
@@ -378,6 +379,7 @@ public:
 			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 10, DebugBuffer);
 
 			for(int i=0;i<this->verticesObjects.size();i++){
+				glLineWidth(5);
 				glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, this->verticesObjects.at(i)->getColor());
 				glEnableVertexAttribArray(0);
 				glBindBuffer(GL_ARRAY_BUFFER, this->verticesObjects.at(i)->getVBO());
@@ -394,6 +396,7 @@ public:
 				glDrawArrays(this->verticesObjects.at(i)->getDrawMode(), 0, this->verticesObjects.at(i)->getVertices().size());
 			}
 			if(glfwGetKey(window, GLFW_KEY_G) != GLFW_PRESS){
+				glLineWidth(1);
 				for (int i = 0; i < this->indexedVerticesObjects.size(); i++) {
 					glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, this->indexedVerticesObjects.at(i)->getColor());
 					glEnableVertexAttribArray(0);
