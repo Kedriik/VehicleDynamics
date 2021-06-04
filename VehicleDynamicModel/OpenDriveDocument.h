@@ -32,7 +32,7 @@ public:
 	}
 };
 template<typename T>
-T trapezoidalIntegral(std::function<double (double)> f, T a, T b, int n) {
+T trapezoidalIntegral(std::function<double(double)> f, T a, T b, int n) {
 	T h = (b - a) / n;
 	T result = 0.5 * f(a) + 0.5 * f(b);
 	for (int i = 0; i < n; i++) {
@@ -103,10 +103,10 @@ struct Successor {
 	std::optional <ContactPoint> contactPoint;
 	std::optional<double> elementS;
 	std::optional<int> elementDir;
-	Successor(std::string _elementId, ElementType _elementType, 
+	Successor(std::string _elementId, ElementType _elementType,
 		std::optional <double> _elementS = std::optional<double>(),
 		std::optional <int> _elementDir = std::optional <int>(),
-		std::optional<ContactPoint> _contactPoint  = std::optional<ContactPoint>()) :
+		std::optional<ContactPoint> _contactPoint = std::optional<ContactPoint>()) :
 		elementId(_elementId), contactPoint(_contactPoint), elementType(_elementType), elementS(_elementS), elementDir(_elementDir) {
 	}
 	Successor() {
@@ -122,12 +122,12 @@ enum class CountryCode {
 	DE = 1
 };
 enum class SpeedUnit {
-	mps  = 0,   //m/s
-	mph  = 1,    
+	mps = 0,   //m/s
+	mph = 1,
 	kmph = 2  //km/h
 };
 enum class DistanceUnit {
-	m,km,ft,mile
+	m, km, ft, mile
 };
 enum class MassUnit {
 	kg, t
@@ -138,18 +138,18 @@ enum class Slope {
 struct Speed {
 	std::string maxSpeed;
 	SpeedUnit speedUnit;
-	Speed(std::string _maxSpeed = "undefined",SpeedUnit _speedUnit = SpeedUnit::kmph):
-	maxSpeed(_maxSpeed),speedUnit(_speedUnit){}
+	Speed(std::string _maxSpeed = "undefined", SpeedUnit _speedUnit = SpeedUnit::kmph) :
+		maxSpeed(_maxSpeed), speedUnit(_speedUnit) {}
 };
 struct Type {
 	double s;
 	std::string type;
 	std::optional<CountryCode> countryCode;
 	std::optional<Speed> speed;
-	Type(double _s,std::string _type, 
+	Type(double _s, std::string _type,
 		std::optional<CountryCode> _countryCode = std::optional<CountryCode>(),
 		std::optional<Speed> _speed = std::optional<Speed>())
-		:s(_s),type(_type),countryCode(_countryCode),speed(_speed) {}
+		:s(_s), type(_type), countryCode(_countryCode), speed(_speed) {}
 };
 struct Lane {
 	Lane() {
@@ -163,7 +163,7 @@ struct Object {
 	Object() {
 
 	}
-	~Object(){
+	~Object() {
 
 	}
 };
@@ -194,7 +194,7 @@ struct Surface {
 struct Shape {
 	double s, t, a, b, c, d;
 	Shape(double _s, double _t, double _a, double _b, double _c, double _d) :
-		t(_t),a(_a), b(_b), c(_c), d(_d) {
+		t(_t), a(_a), b(_b), c(_c), d(_d) {
 		if (_s < 0) throw new std::exception("s value cannot be negative!");
 		s = _s;
 	}
@@ -234,12 +234,12 @@ struct SBasedProperty {
 		return defaultProp;
 	}
 };
-struct LateralProfile:SBasedProperty {
+struct LateralProfile :SBasedProperty {
 	std::vector<Shape> shapes;
 	std::vector<Superelevation> superelevations;
 	LateralProfile(std::vector<Shape> _shapes, std::vector<Superelevation> _superelevations) :
 		shapes(_shapes), superelevations(_superelevations) {}
-	LateralProfile(){}
+	LateralProfile() {}
 	Superelevation getCurrentSuperelevation(double s) {
 		Superelevation defaultSuperelevation(0, 0, 0, 0, 0);
 		return this->getCurrentProp(s, this->superelevations, defaultSuperelevation);
@@ -247,18 +247,18 @@ struct LateralProfile:SBasedProperty {
 };
 struct Elevation {
 	double s, a, b, c, d;
-	Elevation(double _s, double _a, double _b, double _c, double _d):
-	a(_a),b(_b),c(_c),d(_d){
+	Elevation(double _s, double _a, double _b, double _c, double _d) :
+		a(_a), b(_b), c(_c), d(_d) {
 		if (_s < 0) throw new std::exception("s value cannot be negative!");
 		s = _s;
 	}
 };
-struct ElevationProfile:SBasedProperty {
+struct ElevationProfile :SBasedProperty {
 private:
 	std::vector<Elevation> elevations;
 public:
-	ElevationProfile(std::vector<Elevation> _elevations):elevations(_elevations){}
-	ElevationProfile(){}
+	ElevationProfile(std::vector<Elevation> _elevations) :elevations(_elevations) {}
+	ElevationProfile() {}
 	Elevation getCurrentElevation(double s) {
 		Elevation defaultElevation(0, 0, 0, 0, 0);
 		return this->getCurrentProp(s, this->elevations, defaultElevation);
@@ -519,7 +519,7 @@ public:
 			double step = this->length / this->n_vertices;
 			for (int i = 0; i <= this->n_vertices; i++) {
 				x = (1 / a) * trapezoidalIntegral(OpenDriveMath::fx, 0.0, a * s, n_integral);
-				y = dir * (1 / a) * trapezoidalIntegral(OpenDriveMath::fy, 0.0, a *s, n_integral);
+				y = dir * (1 / a) * trapezoidalIntegral(OpenDriveMath::fy, 0.0, a * s, n_integral);
 				return this->transformAndReturnVertex(x, y, 0, 0);
 			}
 		}
@@ -624,12 +624,12 @@ public:
 
 				return this->transformAndReturnVertex(x, y, x_origin, y_origin);
 			}
-			
+
 		}
 
 	}
 };
-struct arc:Geometry {
+struct arc :Geometry {
 	arc(double _curvature, double _s, double _x, double _y, double _hdg, double _length) :
 		curvature(_curvature), Geometry(_s, _x, _y, _hdg, _length) {
 		//n_vertices = (int(length) + 1);
@@ -681,7 +681,7 @@ struct paramPoly3 :Geometry {
 };
 struct PlanView {
 	std::vector<Geometry*> geometries;
-	PlanView(std::vector<Geometry*> _geometries):geometries(_geometries) {
+	PlanView(std::vector<Geometry*> _geometries) :geometries(_geometries) {
 
 	}
 	~PlanView() {
@@ -713,11 +713,11 @@ namespace Lanes {
 		connectingRamp
 	};
 	struct Height {
-		double sOffset=0, inner=0, outer=0;
+		double sOffset = 0, inner = 0, outer = 0;
 		Height(double _sOffset, double _inner, double _outer) :sOffset(_sOffset), inner(_inner), outer(_outer) {
 			if (this->sOffset < 0) throw new std::exception("sOffset cannot be negative.");
 		}
-		Height(){}
+		Height() {}
 	};
 	struct Width {
 		double sOffset = 0, a = 0, b = 0, c = 0, d = 0;
@@ -725,7 +725,7 @@ namespace Lanes {
 			sOffset(_sOffset), a(_a), b(_b), c(_c), d(_d) {
 			if (this->sOffset < 0) throw new std::exception("sOffset cannot be negative.");
 		}
-		Width(){}
+		Width() {}
 	};
 	struct Border {
 		double sOffset = 0, a = 0, b = 0, c = 0, d = 0;
@@ -733,13 +733,13 @@ namespace Lanes {
 			sOffset(_sOffset), a(_a), b(_b), c(_c), d(_d) {
 			if (this->sOffset < 0) throw new std::exception("sOffset cannot be negative.");
 		}
-		Border(){}
+		Border() {}
 	};
 	struct LaneGeometry {
 		std::vector<Border> border;
 		std::vector<Width> width;
-		LaneGeometry(std::vector<Border> _border, std::vector<Width> _width):
-		border(_border),width(_width){}
+		LaneGeometry(std::vector<Border> _border, std::vector<Width> _width) :
+			border(_border), width(_width) {}
 		double getCurrentWidth(double s) {
 
 		}
@@ -747,11 +747,11 @@ namespace Lanes {
 	};
 	struct Predecessor {
 		int id;
-		Predecessor(int _id):id(_id){}
+		Predecessor(int _id) :id(_id) {}
 	};
 	struct Successor {
 		int id;
-		Successor(int _id):id(_id){}
+		Successor(int _id) :id(_id) {}
 	};
 	struct Link {
 		std::vector<Predecessor> predecessor;
@@ -771,7 +771,7 @@ namespace Lanes {
 	};
 	struct Left {
 		std::vector<Lane> lane;
-		Left(std::vector<Lane> _lane):lane(_lane) {
+		Left(std::vector<Lane> _lane) :lane(_lane) {
 			for (int i = 0; i < this->lane.size(); i++) {
 				if (this->lane.at(i).id < 0) throw new std::exception("Lane ids for left lanes have to be positive !");
 			}
@@ -784,7 +784,7 @@ namespace Lanes {
 				if (this->lane.at(i).id != 0) throw new std::exception("Lane ids for center lanes have to be equal zero !");
 			}
 		}
-		Center(){}
+		Center() {}
 	};
 	struct Right {
 		std::vector<Lane> lane;
@@ -798,14 +798,14 @@ namespace Lanes {
 		RoadMark() {}
 	};
 }
-struct LaneSection:SBasedProperty {
+struct LaneSection :SBasedProperty {
 	double s;
 	std::optional<bool> singleSide = std::optional<bool>();
 	std::optional<Lanes::Right> right = std::optional<Lanes::Right>();
 	std::optional<Lanes::Left>  left = std::optional<Lanes::Left>();
 	Lanes::Center center;
 	LaneSection(double _s, std::optional<bool> _singleSide, Lanes::Center _center, std::optional<Lanes::Right> _right = std::optional<Lanes::Right>(),
-	std::optional<Lanes::Left>  _left = std::optional<Lanes::Left>()):s(_s),singleSide(_singleSide),center(_center),left(_left),right(_right){}
+		std::optional<Lanes::Left>  _left = std::optional<Lanes::Left>()) :s(_s), singleSide(_singleSide), center(_center), left(_left), right(_right) {}
 	void getCurrentLeftWidth(double s, int index, double& innerDist, double& outerDist) {
 		if (index <= 0) {
 			throw new std::exception("Index for left lanes has to be positive");
@@ -815,12 +815,12 @@ struct LaneSection:SBasedProperty {
 			int i;
 			double accumulativeWidth = 0;
 			for (i = 0; i < left.value().lane.size(); i++) {
-				Lanes::Width currentWidth = this->getCurrentPropSOffset(s-this->s, left.value().lane.at(i).laneGeometry.width, defaultWidth);
+				Lanes::Width currentWidth = this->getCurrentPropSOffset(s - this->s, left.value().lane.at(i).laneGeometry.width, defaultWidth);
 				double ds = s - this->s - currentWidth.sOffset;
 				if (index == left.value().lane.at(i).id) {
 					currentWidth = this->getCurrentPropSOffset(s - this->s, left.value().lane.at(i).laneGeometry.width, defaultWidth);
 					ds = s - this->s - currentWidth.sOffset;
-					outerDist = accumulativeWidth+currentWidth.a + currentWidth.b * ds + currentWidth.c * std::pow(ds, 2) + currentWidth.d * std::pow(ds, 3);
+					outerDist = accumulativeWidth + currentWidth.a + currentWidth.b * ds + currentWidth.c * std::pow(ds, 2) + currentWidth.d * std::pow(ds, 3);
 					innerDist = accumulativeWidth;
 					return;
 				}
@@ -863,9 +863,9 @@ struct LaneSection:SBasedProperty {
 		Lanes::Center defaultCenter = Lanes::Center();
 	}
 };
-struct lanes:SBasedProperty {
+struct lanes :SBasedProperty {
 	std::vector<LaneSection> laneSections;
-	lanes(std::vector<LaneSection> _laneSections):laneSections(_laneSections){}
+	lanes(std::vector<LaneSection> _laneSections) :laneSections(_laneSections) {}
 	LaneSection getCurrentLaneSection(double s) {
 		LaneSection defaultLaneSection = LaneSection();
 		return this->getCurrentProp(s, this->laneSections, defaultLaneSection);
@@ -879,9 +879,9 @@ struct RoadSegment {
 struct LineSegment {
 	int t_section_n_points = 10;
 	std::vector<glm::dvec4> vertices;
-	LineSegment(int _t_section_n_points = 10):t_section_n_points(_t_section_n_points){}
-	LineSegment(std::vector<glm::dvec4> _vertices,int _t_section_n_points = 10) :t_section_n_points(_t_section_n_points),
-	vertices(_vertices){}
+	LineSegment(int _t_section_n_points = 10) :t_section_n_points(_t_section_n_points) {}
+	LineSegment(std::vector<glm::dvec4> _vertices, int _t_section_n_points = 10) :t_section_n_points(_t_section_n_points),
+		vertices(_vertices) {}
 };
 class Road {
 	friend class OpenDriveDocument;
@@ -903,7 +903,7 @@ private:
 	lanes roadLanes;
 	std::vector<glm::dvec4> referenceLinePoints;
 	std::vector<RoadSegment> roadSegments;
-	
+
 	//void 
 	template <class T>
 	void fillLanesVertices(T _lane, std::vector<glm::dvec4> vertices) {
@@ -914,6 +914,7 @@ private:
 		double edge_epsilon = 0.0;
 		ElevationProfile ep = this->elevationProfile.value_or(ElevationProfile());
 		LateralProfile lp = this->lateralProfile.value_or(LateralProfile());
+		double triangulation_step = 1;
 		for (int i = 0; i < this->planView.geometries.size(); i++) {
 			double ds = 0;
 			Geometry* g = this->planView.geometries.at(i);
@@ -923,15 +924,21 @@ private:
 			double epsilon = 0.1;
 			double a = -1;
 			if (i == this->planView.geometries.size() - 1) {
-				for (int j = 0; j < referenceLineCoordinates.size() ; j++) {
+				for (int j = 0; j < referenceLineCoordinates.size(); j++) {
 					double s_start;
 					double s_end;
 					glm::dvec4 positionStart;
-					glm::dvec4 positionEnd; 
-					if (j== referenceLineCoordinates.size()-1) {
+					glm::dvec4 positionEnd;
+					if (j == referenceLineCoordinates.size() - 1) {
 						s_start = g->length;
-						s_end = g->length-epsilon;
+						s_end = g->length - epsilon;
 						positionStart = referenceLineCoordinates.at(j);
+						positionEnd = g->generatePosition(s_end);
+					}
+					else if (j==0) {
+						s_start = 0;
+						s_end = epsilon;
+						positionStart = referenceLineCoordinates.at(0);
 						positionEnd = g->generatePosition(s_end);
 					}
 					else {
@@ -974,17 +981,20 @@ private:
 							glm::dvec3 innerPos = glm::dvec3(positionStart) + right_direction * innerW;
 							glm::dvec3 outerPos = glm::dvec3(positionStart) + right_direction * outerW;
 							LineSegment lineSegment = LineSegment();
-							int n_points = int((outerW - innerW) / 2 + 1);
+							int n_points = int((outerW - innerW) / triangulation_step + 1);
 							double t_ds = (outerW - innerW) / n_points;
 							glm::dvec3 t_dir = glm::normalize(outerPos - innerPos);
-							
+
 							if (right.lane.size() - 1 == i)
 								road_right_edges.push_back(glm::dvec4(innerPos + t_dir * t_ds * double(n_points + edge_epsilon), 0.0));
-							for (int i = 0; i < n_points; i++) {
+							for (int i = 1; i < n_points; i++) {
 								vertices.push_back(glm::dvec4(innerPos + t_dir * t_ds * double(i), 0.0));
 							}
-							
+
 						}
+					}
+					else {
+						road_right_edges.push_back(positionStart);
 					}
 					if (laneSection.left.has_value()) {
 						Lanes::Left left = laneSection.left.value();
@@ -994,116 +1004,126 @@ private:
 							glm::dvec3 innerPos = glm::dvec3(positionStart) + left_direction * innerW;
 							glm::dvec3 outerPos = glm::dvec3(positionStart) + left_direction * outerW;
 							LineSegment lineSegment = LineSegment();
-							int n_points = int((outerW - innerW) / 2 + 1);
+							int n_points = int((outerW - innerW) / triangulation_step + 1);
 							double t_ds = (outerW - innerW) / n_points;
 							glm::dvec3 t_dir = glm::normalize(outerPos - innerPos);
-							
+
 							if (i == left.lane.size() - 1)
 								road_left_edges.push_back(glm::dvec4(innerPos + t_dir * t_ds * double(n_points + edge_epsilon), 0.0));
-							for (int i = 0; i < n_points; i++) {
+							for (int i = 1; i < n_points; i++) {
 								vertices.push_back(glm::dvec4(innerPos + t_dir * t_ds * double(i), 0.0));
 							}
-							
+
 						}
 					}
+					else {
+						road_left_edges.push_back(positionStart);
+					}
 				}
 			}
-			else{
-				for (int j = 0; j < referenceLineCoordinates.size()-1; j++) {
-				double s_start;
-				double s_end;
-				glm::dvec4 positionStart;
-				glm::dvec4 positionEnd;
-				if (j == 0) {
-					s_start = 0;
-					s_end = epsilon;
-					positionStart = referenceLineCoordinates.at(0);
-					positionEnd = g->generatePosition(s_end);
-				}
-				/*else if (j== referenceLineCoordinates.size()-1) {
-					s_start = g->length;
-					s_end = g->s + j * step_ds;
-					positionStart = referenceLineCoordinates.at(j);
-					positionEnd = g->generatePosition(s_end);
-				}*/
-				else {
-					s_start = g->s + j * step_ds;
-					s_end = g->s + (j + 1) * step_ds;
-					positionStart = referenceLineCoordinates.at(j);
-					positionEnd = referenceLineCoordinates.at(j + 1);
-				}
+			else {
+				for (int j = 0; j < referenceLineCoordinates.size() - 1; j++) {
+					double s_start;
+					double s_end;
+					glm::dvec4 positionStart;
+					glm::dvec4 positionEnd;
+					if (j == 0) {
+						s_start = 0;
+						s_end = epsilon;
+						positionStart = referenceLineCoordinates.at(0);
+						positionEnd = g->generatePosition(s_end);
+					}
+					/*else if (j== referenceLineCoordinates.size()-1) {
+						s_start = g->length;
+						s_end = g->s + j * step_ds;
+						positionStart = referenceLineCoordinates.at(j);
+						positionEnd = g->generatePosition(s_end);
+					}*/
+					else {
+						s_start = g->s + j * step_ds;
+						s_end = g->s + (j + 1) * step_ds;
+						positionStart = referenceLineCoordinates.at(j);
+						positionEnd = referenceLineCoordinates.at(j + 1);
+					}
 
-				Elevation elevation_start = ep.getCurrentElevation(s_start);
-				Elevation elevation_end = ep.getCurrentElevation(s_end);
-				Superelevation superelevation_start = lp.getCurrentSuperelevation(s_start);
-				Superelevation superelevation_end = lp.getCurrentSuperelevation(s_end);
-				//a + b*ds + c*ds² + d*ds³
-				double ds_start = s_start - elevation_start.s;
-				double ds_end = s_end - elevation_end.s;
+					Elevation elevation_start = ep.getCurrentElevation(s_start);
+					Elevation elevation_end = ep.getCurrentElevation(s_end);
+					Superelevation superelevation_start = lp.getCurrentSuperelevation(s_start);
+					Superelevation superelevation_end = lp.getCurrentSuperelevation(s_end);
+					//a + b*ds + c*ds² + d*ds³
+					double ds_start = s_start - elevation_start.s;
+					double ds_end = s_end - elevation_end.s;
 
-				positionStart.z = elevation_start.a + elevation_start.b * ds_start + elevation_start.c * std::pow(ds_start, 2) + elevation_start.d * std::pow(ds_start, 3);
-				ds_start = s_start - superelevation_start.s;
-				positionStart.w = superelevation_start.a + superelevation_start.b * ds_start + superelevation_start.c * std::pow(ds_start, 2) + superelevation_start.d * std::pow(ds_start, 3);
+					positionStart.z = elevation_start.a + elevation_start.b * ds_start + elevation_start.c * std::pow(ds_start, 2) + elevation_start.d * std::pow(ds_start, 3);
+					ds_start = s_start - superelevation_start.s;
+					positionStart.w = superelevation_start.a + superelevation_start.b * ds_start + superelevation_start.c * std::pow(ds_start, 2) + superelevation_start.d * std::pow(ds_start, 3);
 
-				positionEnd.z = elevation_end.a + elevation_end.b * ds_end + elevation_end.c * std::pow(ds_end, 2) + elevation_end.d * std::pow(ds_end, 3);
-				ds_end = s_end - superelevation_end.s;
-				positionEnd.w = superelevation_end.a + superelevation_end.b * ds_end + superelevation_end.c * std::pow(ds_end, 2) + superelevation_end.d * std::pow(ds_end, 3);
-				referenceLinePoints.push_back(positionStart);
-				glm::dvec3 up = glm::dvec3(0, 0, 1);
-				glm::dvec3 s_direction = glm::dvec3(glm::normalize(positionEnd - positionStart));
-				if (j == referenceLineCoordinates.size() - 1) {
-					s_direction *= -1;
-				}
-				glm::dquat superelevation_rotation = glm::angleAxis(positionStart.w, glm::dvec3(s_direction));
-				glm::dvec3 left_direction = superelevation_rotation * glm::normalize(glm::cross(up, s_direction));
-				glm::dvec3 right_direction = superelevation_rotation * glm::normalize(glm::cross(s_direction, up));
-				LaneSection laneSection = this->roadLanes.getCurrentLaneSection(s_start);
-				if (laneSection.right.has_value()) {
-					Lanes::Right right = laneSection.right.value();
-					for (int i = 0; i < right.lane.size(); i++) {
-						double innerW, outerW;
-						laneSection.getCurrentRightWidth(s_start, -(i + 1), innerW, outerW);
-						glm::dvec3 innerPos = glm::dvec3(positionStart) + right_direction * innerW;
-						glm::dvec3 outerPos = glm::dvec3(positionStart) + right_direction * outerW;
-						LineSegment lineSegment = LineSegment();
-						int n_points = int((outerW - innerW) / 2 + 1);
-						double t_ds = (outerW - innerW) / n_points;
-						glm::dvec3 t_dir = glm::normalize(outerPos - innerPos);
-						
+					positionEnd.z = elevation_end.a + elevation_end.b * ds_end + elevation_end.c * std::pow(ds_end, 2) + elevation_end.d * std::pow(ds_end, 3);
+					ds_end = s_end - superelevation_end.s;
+					positionEnd.w = superelevation_end.a + superelevation_end.b * ds_end + superelevation_end.c * std::pow(ds_end, 2) + superelevation_end.d * std::pow(ds_end, 3);
+					referenceLinePoints.push_back(positionStart);
+					glm::dvec3 up = glm::dvec3(0, 0, 1);
+					glm::dvec3 s_direction = glm::dvec3(glm::normalize(positionEnd - positionStart));
+					if (j == referenceLineCoordinates.size() - 1) {
+						s_direction *= -1;
+					}
+					glm::dquat superelevation_rotation = glm::angleAxis(positionStart.w, glm::dvec3(s_direction));
+					glm::dvec3 left_direction = superelevation_rotation * glm::normalize(glm::cross(up, s_direction));
+					glm::dvec3 right_direction = superelevation_rotation * glm::normalize(glm::cross(s_direction, up));
+					LaneSection laneSection = this->roadLanes.getCurrentLaneSection(s_start);
+					if (laneSection.right.has_value()) {
+						Lanes::Right right = laneSection.right.value();
+						for (int i = 0; i < right.lane.size(); i++) {
+							double innerW, outerW;
+							laneSection.getCurrentRightWidth(s_start, -(i + 1), innerW, outerW);
+							glm::dvec3 innerPos = glm::dvec3(positionStart) + right_direction * innerW;
+							glm::dvec3 outerPos = glm::dvec3(positionStart) + right_direction * outerW;
+							LineSegment lineSegment = LineSegment();
+							int n_points = int((outerW - innerW) / triangulation_step + 1);
+							double t_ds = (outerW - innerW) / n_points;
+							glm::dvec3 t_dir = glm::normalize(outerPos - innerPos);
+
 							if (right.lane.size() - 1 == i)
 								road_right_edges.push_back(glm::dvec4(innerPos + t_dir * t_ds * double(n_points + edge_epsilon), 0.0));
-							for (int i = 0; i < n_points; i++) {
+							for (int i = 1; i < n_points; i++) {
 								vertices.push_back(glm::dvec4(innerPos + t_dir * t_ds * double(i), 0.0));
 							}
-						
+
+						}
 					}
-				}
-				if (laneSection.left.has_value()) {
-					Lanes::Left left = laneSection.left.value();
-					for (int i = 0; i < left.lane.size(); i++) {
-						double innerW, outerW;
-						laneSection.getCurrentLeftWidth(s_start, i + 1, innerW, outerW);
-						glm::dvec3 innerPos = glm::dvec3(positionStart) + left_direction * innerW;
-						glm::dvec3 outerPos = glm::dvec3(positionStart) + left_direction * outerW;
-						LineSegment lineSegment = LineSegment();
-						int n_points = int((outerW - innerW) / 2 + 1);
-						double t_ds = (outerW - innerW) / n_points;
-						glm::dvec3 t_dir = glm::normalize(outerPos - innerPos);
-						
+					else {
+						road_right_edges.push_back(positionStart);
+					}
+					if (laneSection.left.has_value()) {
+						Lanes::Left left = laneSection.left.value();
+						for (int i = 0; i < left.lane.size(); i++) {
+							double innerW, outerW;
+							laneSection.getCurrentLeftWidth(s_start, i + 1, innerW, outerW);
+							glm::dvec3 innerPos = glm::dvec3(positionStart) + left_direction * innerW;
+							glm::dvec3 outerPos = glm::dvec3(positionStart) + left_direction * outerW;
+							LineSegment lineSegment = LineSegment();
+							int n_points = int((outerW - innerW) / triangulation_step + 1);
+							double t_ds = (outerW - innerW) / n_points;
+							glm::dvec3 t_dir = glm::normalize(outerPos - innerPos);
+
 							if (i == left.lane.size() - 1)
 								road_left_edges.push_back(glm::dvec4(innerPos + t_dir * t_ds * double(n_points + edge_epsilon), 0.0));
-							for (int i = 0; i < n_points; i++) {
+							for (int i = 1; i < n_points; i++) {
 								vertices.push_back(glm::dvec4(innerPos + t_dir * t_ds * double(i), 0.0));
 							}
-						
+
+						}
+					}
+					else {
+						road_left_edges.push_back(positionStart);
 					}
 				}
 			}
-			}
 		}
+		this->_vertices = vertices;
 	}
 
-	void generateReferenceLineCoordinates() {  
+	void generateReferenceLineCoordinates() {
 		ElevationProfile ep = this->elevationProfile.value_or(ElevationProfile());
 		LateralProfile lp = this->lateralProfile.value_or(LateralProfile());
 		for (int i = 0; i < this->planView.geometries.size(); i++) {
@@ -1117,9 +1137,9 @@ private:
 				glm::dvec4 pos = referenceLineCoordinates.at(j);
 				Elevation elevation = ep.getCurrentElevation(s);
 				Superelevation superelevation = lp.getCurrentSuperelevation(s);
-					//a + b*ds + c*ds² + d*ds³
-				double ds = s-elevation.s;
-				pos.z = elevation.a + elevation.b*ds + elevation.c*std::pow(ds,2)+elevation.d*std::pow(ds, 3);
+				//a + b*ds + c*ds² + d*ds³
+				double ds = s - elevation.s;
+				pos.z = elevation.a + elevation.b * ds + elevation.c * std::pow(ds, 2) + elevation.d * std::pow(ds, 3);
 				ds = s - superelevation.s;
 				pos.w = superelevation.a + superelevation.b * ds + superelevation.c * std::pow(ds, 2) + superelevation.d * std::pow(ds, 3);
 				//referenceLinePoints.push_back(pos);
@@ -1128,12 +1148,12 @@ private:
 	}
 
 public:
-	Road(double _length, std::string _id, std::string _junction, 
-		std::optional<std::string> _name,std::optional<TrafficRule> _rule, PlanView _planView,
-	Link _link, std::vector<Type> _types, lanes _lanes,std::optional<LateralProfile> _lateralProfile = std::optional<LateralProfile>(),
-	std::optional<ElevationProfile> _elevationProfile = std::optional<ElevationProfile>()):
-	length(_length),id(_id),junction(_junction),name(_name),rule(_rule),planView(_planView),
-	link(_link),types(_types),roadLanes(_lanes),lateralProfile(_lateralProfile),elevationProfile(_elevationProfile){}
+	Road(double _length, std::string _id, std::string _junction,
+		std::optional<std::string> _name, std::optional<TrafficRule> _rule, PlanView _planView,
+		Link _link, std::vector<Type> _types, lanes _lanes, std::optional<LateralProfile> _lateralProfile = std::optional<LateralProfile>(),
+		std::optional<ElevationProfile> _elevationProfile = std::optional<ElevationProfile>()) :
+		length(_length), id(_id), junction(_junction), name(_name), rule(_rule), planView(_planView),
+		link(_link), types(_types), roadLanes(_lanes), lateralProfile(_lateralProfile), elevationProfile(_elevationProfile) {}
 	~Road() {}
 	PlanView getPlanView() {
 		return this->planView;
@@ -1143,7 +1163,7 @@ public:
 	}
 };
 class OpenDriveDocument
-{	
+{
 private:
 	std::vector<Road> roads;
 	std::vector<std::string> connection_road_ids;
@@ -1153,7 +1173,7 @@ private:
 	template <class T>
 	void populateCessor(tinyxml2::XMLElement* xml_cessor, T& cessor);
 	void populateGeometries(tinyxml2::XMLElement* xml_road, std::vector<Geometry*>& geometries);
-	void populateTypes(tinyxml2::XMLElement* xml_road, std::vector<Type> &types);
+	void populateTypes(tinyxml2::XMLElement* xml_road, std::vector<Type>& types);
 	void populateSuperelevations(tinyxml2::XMLElement* xml_road, std::vector<Superelevation>& sueperelevations);
 	void populateShapes(tinyxml2::XMLElement* xml_road, std::vector<Shape>& shapes);
 	void populateElevations(tinyxml2::XMLElement* xml_road, std::vector<Elevation>& elevations);
@@ -1161,9 +1181,9 @@ private:
 	void populateLane(tinyxml2::XMLElement* xml_lanesection, Lanes::Lane& lane);
 	void switchLaneType(std::string s_type, Lanes::Type& type);
 	template <class T>
-	void populateGenericPolynomialTag(tinyxml2::XMLElement* xml_tag, T &polynomialStruct);
+	void populateGenericPolynomialTag(tinyxml2::XMLElement* xml_tag, T& polynomialStruct);
 	template <class T>
-	void populateGenericPolynomialTags(tinyxml2::XMLElement* xml_tag, std::string childTagName, std::vector<T> &polynomialStructs);
+	void populateGenericPolynomialTags(tinyxml2::XMLElement* xml_tag, std::string childTagName, std::vector<T>& polynomialStructs);
 	void populateConnectionRoads() //TODO: this is temporary function !!! Consider removing it and implement proper junction parsing
 	{
 		tinyxml2::XMLElement* xml_junction = this->doc.FirstChildElement()->FirstChildElement("junction");
@@ -1177,14 +1197,9 @@ private:
 			xml_junction = xml_junction->NextSiblingElement("junction");
 		}
 	}
+
 public:
-	
-	
-
-	std::vector<glm::dvec4> road_edges;
-
 	std::vector <glm::dvec4> reference_line_vertices;
-	std::vector <glm::dvec4> filtered_road_vertices;
 	std::vector<IndexedVerticesObject*> roadRenderObjects;
 	OpenDriveDocument(std::string filePath);
 	void generateReferenceLines();
@@ -1210,6 +1225,7 @@ public:
 				vertices.push_back(v);
 			}
 			CDT::RemoveDuplicates(vertices);
+			
 			road_vertices.clear();
 			int left_start, left_end, right_start, right_end;
 			left_start = vertices.size();
@@ -1251,9 +1267,17 @@ public:
 
 			Triangulation cdt =
 				Triangulation(CDT::FindingClosestPoint::ClosestRandom, 10);
-			cdt.insertVertices(vertices);
-			cdt.insertEdges(edges);
-			cdt.eraseOuterTriangles();
+
+			try{
+				cdt.insertVertices(vertices);
+				cdt.insertEdges(edges);
+				cdt.eraseOuterTriangles();
+			}
+			catch (std::exception e) {
+				std::cout << e.what() << std::endl;
+				cdt.eraseSuperTriangle();
+			}
+			
 			road_vertices.clear();
 			for (int i = 0; i < cdt.vertices.size(); i++) {
 				road_vertices.push_back(glm::dvec4(cdt.vertices.at(i).pos.x, cdt.vertices.at(i).pos.y, cdt.vertices.at(i).pos.z, 1));

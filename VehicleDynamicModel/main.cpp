@@ -42,7 +42,7 @@ int main(int argc, char** argv)
 		Road r = odd.getRoads().at(i);
 		VerticesObject * obj = new VerticesObject(r.getReferencePoints(), GL_LINE_STRIP,glm::vec4(1,0,0,1));
 		obj->generateVBO();
-		verticesObjects.push_back(obj);
+		//verticesObjects.push_back(obj);
 
 		obj = new VerticesObject(r._vertices, GL_POINTS, glm::vec4(0, 1, 0, 1));
 		obj->generateVBO();
