@@ -21,6 +21,7 @@
 #include "delaunator.h"
 #include "CDT/include/CDT.h"
 #include "Renderer/Renderer.h"
+#include <chrono>
 #define GLM_SWIZZLE
 class OpenDriveMath {
 public:
@@ -915,6 +916,7 @@ private:
 		ElevationProfile ep = this->elevationProfile.value_or(ElevationProfile());
 		LateralProfile lp = this->lateralProfile.value_or(LateralProfile());
 		double triangulation_step = 1;
+		//TODO: Duplicate functionality move to function !
 		for (int i = 0; i < this->planView.geometries.size(); i++) {
 			double ds = 0;
 			Geometry* g = this->planView.geometries.at(i);
@@ -1205,6 +1207,7 @@ public:
 	void generateReferenceLines();
 	void generateRoads() {
 		for (int i = 0; i < this->roads.size(); i++) {
+			std::cout << "Generating road:" << i + 1 << "/" << this->roads.size() <<" with length:"<<this->roads.at(i).length<<"."<< std::endl;
 			bool triangulate = true;
 			double dist_epsilon = 0.1;
 			std::vector <glm::dvec4> road_vertices;
@@ -1213,8 +1216,17 @@ public:
 			std::vector <glm::dvec4> debugVertices;
 			std::vector<glm::dvec4> road_left_edge;
 			std::vector<glm::dvec4> road_right_edge;
+			std::cout << "Starting parsing road from document..." << std::endl;
+			using clock = std::chrono::system_clock;
+			using sec = std::chrono::duration<double>;
+			auto before = clock::now();
 			this->roads.at(i).generateRoad(road_vertices, roadIndexes, reference_line_vertices, road_left_edge, road_right_edge,
 				connection_road_ids);
+			sec duration = clock::now() - before;
+			std::cout << "Parsin took " << duration.count() << "s" << std::endl;
+
+			std::cout << "Starting triangulation procedure..." << std::endl;
+			before = clock::now();
 			std::vector<double>  delanuator_vertices;
 			std::vector<double>  filtered_close_delanuator_vertices;
 			std::vector<CDT::V2d<double>> vertices;
@@ -1224,7 +1236,7 @@ public:
 				v.z = road_vertices.at(i).z;
 				vertices.push_back(v);
 			}
-			CDT::RemoveDuplicates(vertices);
+			//CDT::RemoveDuplicates(vertices);
 			
 			road_vertices.clear();
 			int left_start, left_end, right_start, right_end;
@@ -1267,7 +1279,7 @@ public:
 
 			Triangulation cdt =
 				Triangulation(CDT::FindingClosestPoint::ClosestRandom, 10);
-
+			std::cout << "About to triangulate " << vertices.size() << " vertices and " << edges.size() << " edges." << std::endl;
 			try{
 				cdt.insertVertices(vertices);
 				cdt.insertEdges(edges);
@@ -1288,6 +1300,8 @@ public:
 				roadIndexes.push_back(cdt.triangles.at(i).vertices.at(1));
 				roadIndexes.push_back(cdt.triangles.at(i).vertices.at(2));
 			}
+			duration = clock::now() - before;
+			std::cout << "Triangulation took " << duration.count() << "s" << std::endl;
 			IndexedVerticesObject* iobj = new IndexedVerticesObject(road_vertices, roadIndexes, GL_TRIANGLES);
 			this->roadRenderObjects.push_back(iobj);
 		}
