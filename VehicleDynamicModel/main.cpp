@@ -110,6 +110,15 @@ int main(int argc, char** argv)
 			}
 		}
 	}
+	std::vector<glm::dvec4> sphereVertices;
+	std::vector<glm::dvec3> sphereNormals;
+	std::vector<glm::dvec2> texCoords;
+	std::vector<unsigned int> sphereindices;
+	std::vector<unsigned int> spherelinesIndices;
+	ShapesGenerator::generateSphereShape(sphereVertices, sphereNormals, texCoords, sphereindices, spherelinesIndices);
+	IndexedVerticesObject* sphereObj = new IndexedVerticesObject(sphereVertices, sphereindices, GL_TRIANGLES, glm::dvec4(1, 1, 0, 1));
+	sphereObj->generateVBO();
+	indexedVerticesObjects.push_back(sphereObj);
 	renderer.addVerticesObjects(verticesObjects);
 	renderer.addIndexedVerticesObjects(indexedVerticesObjects);
 	renderer.launchLoop();
@@ -131,5 +140,8 @@ int main(int argc, char** argv)
 	
 	for (auto vo : verticesObjects) {
 		delete vo;
+	}
+	for (auto ivo : indexedVerticesObjects) {
+		delete ivo;
 	}
 }
