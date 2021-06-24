@@ -104,12 +104,12 @@ public:
 		//glBlendFunc(GL_ONE, GL_ONE);
 
 		ShaderInfo  RenderProgramSource[] = {
-			{ GL_VERTEX_SHADER,  "..\\Renderer\\VBOBenchmarkCommons\\Vertex.shader" },
-			{ GL_FRAGMENT_SHADER,"..\\Renderer\\VBOBenchmarkCommons\\Fragment.shader" },
+			{ GL_VERTEX_SHADER,  "Renderer\\VBOBenchmarkCommons\\Vertex.shader" },
+			{ GL_FRAGMENT_SHADER,"Renderer\\VBOBenchmarkCommons\\Fragment.shader" },
 			{ GL_NONE, NULL },
 			{ GL_NONE, NULL },
 			{ GL_NONE, NULL }
-				};
+			};
 		RenderProgram = LoadShaders(RenderProgramSource);
 
 		glGenBuffers(1, &PerFrameBuffer);

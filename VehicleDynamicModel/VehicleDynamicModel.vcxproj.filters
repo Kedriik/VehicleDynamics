@@ -41,9 +41,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\Renderer\DebugDraw.h">
-      <Filter>Source Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\tinyxml2\tinyxml2.h">
       <Filter>Source Files</Filter>
     </ClInclude>
@@ -85,6 +82,9 @@
     </ClInclude>
     <ClInclude Include="CDT\include\remove_at.hpp">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Renderer\DebugDraw.h">
+      <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

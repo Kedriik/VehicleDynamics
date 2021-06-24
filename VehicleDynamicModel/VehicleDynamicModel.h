@@ -3,6 +3,7 @@
 #include <thread>     
 #include "btBulletDynamicsCommon.h"
 #include "BulletCollision/CollisionShapes/btHeightfieldTerrainShape.h"
+#include "BulletCollision/CollisionShapes/btBvhTriangleMeshShape.h"
 #include "BulletDynamics/MLCPSolvers/btDantzigSolver.h"
 #include "BulletDynamics/MLCPSolvers/btSolveProjectedGaussSeidel.h"
 #include "BulletDynamics/MLCPSolvers/btMLCPSolver.h"
@@ -15,6 +16,8 @@ class btCollisionShape;
 #include "btBulletCollisionCommon.h"
 #include "LinearMath/btIDebugDraw.h"
 #include "Renderer/DebugDraw.h"
+//#include "OpenDriveDocument.h"
+#include "OpenDriveDocument.h"
 //keep the collision shapes, for deletion/cleanup
 
 class btUtils {
@@ -77,8 +80,17 @@ public:
 	btScalar m_oldPickingDist;
 	bool useMCLPSolver = true;  //true
 	
-	void initPhysics()
+	void initPhysics(OpenDriveDocument& openDriveDocument)
 	{
+		/*numTriangles: number of triangles
+		triangleIndexBase : the array of vertex indices that makes up the triangles
+		triangleIndexStride : the number of bytes to skip in the vertex indices array to go from the start of one triangle to the start of the next triangle.Typically this is 3 times the sizeof the vertex index type.
+		numVertices : number of vertices
+		vertexBase : the array of vertex positions
+		vertexStride : the number of bytes to skip in the vertex position array to go from the start of one vertex to the start of the next vertex.If the vertex position is composed of 3 floats for example, then this would be 3 * sizeof(float).If it is 3 doubles with 1 double as padding, then 4 * sizeof(double), for example
+		*/
+		//btStridingMeshInterface* roadInterface = new btStridingMeshInterface();
+		//btCollisionShape* road = new btBvhTriangleMeshShape()
 		btCollisionShape* groundShape = new btBoxShape(btVector3(50, 3, 50));
 		this->m_collisionShapes.push_back(groundShape);
 		m_collisionConfiguration = new btDefaultCollisionConfiguration();

@@ -169,7 +169,6 @@
     <ClCompile Include="VehicleDynamicModel.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\Renderer\DebugDraw.h" />
     <ClInclude Include="..\tinyxml2\tinyxml2.h" />
     <ClInclude Include="CDT\include\CDT.h" />
     <ClInclude Include="CDT\include\CDT.hpp" />
@@ -182,6 +181,7 @@
     <ClInclude Include="earcut.hpp" />
     <ClInclude Include="OpenDriveDocument.h" />
     <ClInclude Include="Renderer\camera.h" />
+    <ClInclude Include="Renderer\DebugDraw.h" />
     <ClInclude Include="Renderer\LoadShaders\include\LoadShaders.h" />
     <ClInclude Include="Renderer\Renderer.h" />
   </ItemGroup>

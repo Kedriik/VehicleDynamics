@@ -31,9 +31,8 @@ int main(int argc, char** argv)
 	//	return -1;
 	//}
 	
-	
-	Renderer renderer;
-	renderer.init(1500, 1000);
+	//Renderer renderer;
+	//renderer.init(1500, 1000);
 
 	std::vector<VerticesObject*> verticesObjects;
 	std::vector<IndexedVerticesObject*> indexedVerticesObjects;
@@ -41,11 +40,11 @@ int main(int argc, char** argv)
 	for (int i = 0; i < odd.getRoads().size(); i++) {
 		Road r = odd.getRoads().at(i);
 		VerticesObject * obj = new VerticesObject(r.getReferencePoints(), GL_LINE_STRIP,glm::vec4(1,0,0,1));
-		obj->generateVBO();
+		//obj->generateVBO();
 		//verticesObjects.push_back(obj);
 
 		obj = new VerticesObject(r._vertices, GL_POINTS, glm::vec4(0, 1, 0, 1));
-		obj->generateVBO();
+		//obj->generateVBO();
 		verticesObjects.push_back(obj);
 	}
 
@@ -71,11 +70,11 @@ int main(int argc, char** argv)
 	*/
 	for (auto r : odd.getRoads()) {
 		IndexedVerticesObject* idobj = new IndexedVerticesObject(r.debugVertices, r.debugIndexes, GL_LINES, glm::dvec4(238.0 / 255.0, 130.0 / 255.0, 238.0 / 255.0, 1));
-		idobj->generateVBO();
+		//idobj->generateVBO();
 		indexedVerticesObjects.push_back(idobj);
 	}
 	for (auto ro : odd.roadRenderObjects) {
-		ro->generateVBO();
+		//ro->generateVBO();
 		indexedVerticesObjects.push_back(ro);
 		
 	}
@@ -117,26 +116,29 @@ int main(int argc, char** argv)
 	std::vector<unsigned int> spherelinesIndices;
 	ShapesGenerator::generateSphereShape(sphereVertices, sphereNormals, texCoords, sphereindices, spherelinesIndices);
 	IndexedVerticesObject* sphereObj = new IndexedVerticesObject(sphereVertices, sphereindices, GL_TRIANGLES, glm::dvec4(1, 1, 0, 1));
-	sphereObj->generateVBO();
+	//sphereObj->generateVBO();
+	
 	indexedVerticesObjects.push_back(sphereObj);
-	renderer.addVerticesObjects(verticesObjects);
-	renderer.addIndexedVerticesObjects(indexedVerticesObjects);
-	renderer.launchLoop();
+	
+	
+	//renderer.addVerticesObjects(verticesObjects);
+	//renderer.addIndexedVerticesObjects(indexedVerticesObjects);
+	//renderer.launchLoop();
 	btVehicleDynamics vehicleDynamics;
-	vehicleDynamics.initPhysics();
-	/*DebugDraw* dd = new DebugDraw();
+	vehicleDynamics.initPhysics(odd);
+	DebugDraw* dd = new DebugDraw();
 	dd->init(800, 600);
 	vehicleDynamics.m_dynamicsWorld->setDebugDrawer(dd);
-	vehicleDynamics.m_dynamicsWorld->getDebugDrawer()->setDebugMode(btIDebugDraw::DBG_DrawWireframe);*/
-	//for (int i = 0; i < 10000; i++) {
-	//	vehicleDynamics.m_dynamicsWorld->stepSimulation(10);
-		/*glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	vehicleDynamics.m_dynamicsWorld->getDebugDrawer()->setDebugMode(btIDebugDraw::DBG_DrawWireframe);
+	for (int i = 0; i < 10000; i++) {
+		vehicleDynamics.m_dynamicsWorld->stepSimulation(10);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		vehicleDynamics.m_dynamicsWorld->debugDrawWorld();
 		glDisableVertexAttribArray(0);
 		//gpuDebug();
 		glfwSwapBuffers(dd->window);
-		glfwPollEvents();*/
-	//}
+		glfwPollEvents();
+	}
 	
 	for (auto vo : verticesObjects) {
 		delete vo;
