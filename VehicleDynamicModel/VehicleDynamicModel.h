@@ -79,7 +79,29 @@ public:
 	//btBvhTriangleMeshShape p;
 	btScalar m_oldPickingDist;
 	bool useMCLPSolver = true;  //true
-	
+
+	btRigidBody* generateRoad(OpenDriveDocument& openDriveDocument) {
+		std::vector<IndexedVerticesObject*> rro = openDriveDocument.roadRenderObjects;
+		btTriangleMesh* tMesh = new btTriangleMesh();
+		for (int i = 0; i < rro.size(); i ++)
+		{
+			IndexedVerticesObject *ivo = rro.at(i);
+			for (int j = 0; j < ivo->indexes.size(); j+=3){
+				glm::dvec4 t1, t2, t3;
+				t1 = ivo->vertices.at(ivo->indexes.at(j  ));
+				t2 = ivo->vertices.at(ivo->indexes.at(j+1));
+				t3 = ivo->vertices.at(ivo->indexes.at(j+2));
+				tMesh->addTriangle(btVector3(t1.x,t1.z,t1.y), btVector3(t2.x,t2.z,t2.y), btVector3(t3.x,t3.z,t3.y));
+			}
+			
+		}
+		btCollisionShape* groundShape = new btBvhTriangleMeshShape(tMesh, true);
+		btDefaultMotionState* groundMotionState = new btDefaultMotionState(btTransform(btQuaternion(0, 0, 0, 1), btVector3(0, -1, 0)));
+		btTransform tr;
+		tr.setIdentity();
+		tr.setOrigin(btVector3(0, 0, 0));
+		return btUtils::localCreateRigidBody(0, tr, groundShape, m_dynamicsWorld);
+	}
 	void initPhysics(OpenDriveDocument& openDriveDocument)
 	{
 		/*numTriangles: number of triangles
@@ -91,6 +113,7 @@ public:
 		*/
 		//btStridingMeshInterface* roadInterface = new btStridingMeshInterface();
 		//btCollisionShape* road = new btBvhTriangleMeshShape()
+		
 		btCollisionShape* groundShape = new btBoxShape(btVector3(50, 3, 50));
 		this->m_collisionShapes.push_back(groundShape);
 		m_collisionConfiguration = new btDefaultCollisionConfiguration();
@@ -122,6 +145,7 @@ public:
 		//m_guiHelper->createPhysicsDebugDrawer(m_dynamicsWorld);
 
 		//m_dynamicsWorld->setGravity(btVector3(0,0,0));
+		this->generateRoad(openDriveDocument);
 		btTransform tr;
 		tr.setIdentity();
 		tr.setOrigin(btVector3(0, 0, 0));
@@ -129,7 +153,7 @@ public:
 		//either use heightfield or triangle mesh
 
 		//create ground object
-		btUtils::localCreateRigidBody(0, tr, groundShape, m_dynamicsWorld)->setRestitution(1.0);
+		//btUtils::localCreateRigidBody(0, tr, groundShape, m_dynamicsWorld)->setRestitution(1.0);
 
 		btCollisionShape* chassisShape = new btBoxShape(btVector3(1.f, 0.5f, 2.f));
 		m_collisionShapes.push_back(chassisShape);
@@ -158,9 +182,11 @@ public:
 			compound->addChildShape(suppLocalTrans, suppShape);
 		}
 
+		const btScalar xOffset = 20;
+		const btScalar zOffset = 0;
 		const btScalar FALLHEIGHT = 15;
-		tr.setOrigin(btVector3(0, FALLHEIGHT, 0));
-
+		tr.setOrigin(btVector3(xOffset, FALLHEIGHT, zOffset));
+		
 		const btScalar chassisMass = 2.0f;
 		const btScalar wheelMass = 1.0f;
 		m_carChassis = btUtils::localCreateRigidBody(chassisMass, tr, compound, m_dynamicsWorld);  //chassisShape);
@@ -170,10 +196,10 @@ public:
 		m_wheelShape = new btCylinderShapeX(btVector3(wheelWidth, wheelRadius, wheelRadius));
 
 		btVector3 wheelPos[4] = {
-			btVector3(btScalar(-1.), btScalar(FALLHEIGHT - 0.25), btScalar(1.25)),
-			btVector3(btScalar(1.), btScalar(FALLHEIGHT - 0.25), btScalar(1.25)),
-			btVector3(btScalar(1.), btScalar(FALLHEIGHT - 0.25), btScalar(-1.25)),
-			btVector3(btScalar(-1.), btScalar(FALLHEIGHT - 0.25), btScalar(-1.25)) };
+			btVector3(btScalar(-1.)+xOffset, btScalar(FALLHEIGHT - 0.25), btScalar(1.25) + zOffset),
+			btVector3(btScalar(1.) + xOffset, btScalar(FALLHEIGHT - 0.25), btScalar(1.25) + zOffset),
+			btVector3(btScalar(1.) + xOffset, btScalar(FALLHEIGHT - 0.25), btScalar(-1.25) + zOffset),
+			btVector3(btScalar(-1.) + xOffset, btScalar(FALLHEIGHT - 0.25), btScalar(-1.25)+zOffset) };
 
 		for (int i = 0; i < 4; i++)
 		{

@@ -272,7 +272,7 @@ struct Geometry {
 		if (_length < 0) throw new std::exception("length cannot be negative");
 		s = _s;
 		length = _length;
-		n_vertices = (int(length) + 1);
+		n_vertices = (int(length)/10 + 1);
 	}
 	double s;
 	double x;
