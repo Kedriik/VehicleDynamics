@@ -155,7 +155,7 @@ public:
 
 
 	}
-	virtual void drawLine(const btVector3& from, const btVector3& to, const btVector3& _color) override {
+	void prepareFrame() {
 		ViewMatrix = camera.cameraPositionKeyboard(0.001);
 		GLuint drawMode = GL_LINE;
 		//glBindFramebuffer(GL_FRAMEBUFFER, DefaultFrameBuffer);
@@ -163,13 +163,8 @@ public:
 		//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, PerFrameBuffer);
-		perFrameData = (struct perFrameData*) glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, sizeof(struct perFrameData), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
+		perFrameData = (struct perFrameData*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, sizeof(struct perFrameData), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
 		perFrameData->ViewMatrix = ViewMatrix;
-		glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
-		glBindBuffer(GL_SHADER_STORAGE_BUFFER, ColorBuffer);
-		glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(struct constantData), NULL, GL_DYNAMIC_COPY);
-		color = (struct color*) glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, sizeof(struct color), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
-		color->color = vec4(_color.x(), _color.y(), _color.z(), _color.w());
 		glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 		glPointSize(2);
 		glUseProgram(RenderProgram);
@@ -177,6 +172,13 @@ public:
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, ConstantBuffer);
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, ColorBuffer);
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 10, DebugBuffer);
+	}
+	virtual void drawLine(const btVector3& from, const btVector3& to, const btVector3& _color) override {
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, ColorBuffer);
+		glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(struct constantData), NULL, GL_DYNAMIC_COPY);
+		color = (struct color*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, sizeof(struct color), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
+		color->color = vec4(_color.x(), _color.y(), _color.z(), _color.w());
+		glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, VBO);
 		glBufferData(GL_SHADER_STORAGE_BUFFER, VBOSize * sizeof(vec4), NULL, GL_DYNAMIC_COPY);
 		vbo = (vec4*) glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, VBOSize * sizeof(vec4),

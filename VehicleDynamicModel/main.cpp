@@ -31,8 +31,8 @@ int main(int argc, char** argv)
 	//	return -1;
 	//}
 	
-	//Renderer renderer;
-	//renderer.init(1500, 1000);
+	Renderer renderer;
+	renderer.init(1500, 1000);
 
 	std::vector<VerticesObject*> verticesObjects;
 	std::vector<IndexedVerticesObject*> indexedVerticesObjects;
@@ -45,7 +45,7 @@ int main(int argc, char** argv)
 
 		obj = new VerticesObject(r._vertices, GL_POINTS, glm::vec4(0, 1, 0, 1));
 		//obj->generateVBO();
-		verticesObjects.push_back(obj);
+		//verticesObjects.push_back(obj);
 	}
 
 	/*VerticesObject* obj = new VerticesObject(odd.road_vertices, GL_TRIANGLES, glm::dvec4(0, 0.7, 0, 1));
@@ -71,10 +71,10 @@ int main(int argc, char** argv)
 	for (auto r : odd.getRoads()) {
 		IndexedVerticesObject* idobj = new IndexedVerticesObject(r.debugVertices, r.debugIndexes, GL_LINES, glm::dvec4(238.0 / 255.0, 130.0 / 255.0, 238.0 / 255.0, 1));
 		//idobj->generateVBO();
-		indexedVerticesObjects.push_back(idobj);
+		//indexedVerticesObjects.push_back(idobj);
 	}
 	for (auto ro : odd.roadRenderObjects) {
-		//ro->generateVBO();
+		ro->generateVBO();
 		indexedVerticesObjects.push_back(ro);
 		
 	}
@@ -116,14 +116,23 @@ int main(int argc, char** argv)
 	std::vector<unsigned int> spherelinesIndices;
 	ShapesGenerator::generateSphereShape(sphereVertices, sphereNormals, texCoords, sphereindices, spherelinesIndices);
 	IndexedVerticesObject* sphereObj = new IndexedVerticesObject(sphereVertices, sphereindices, GL_TRIANGLES, glm::dvec4(1, 1, 0, 1));
-	//sphereObj->generateVBO();
+	sphereObj->generateVBO();
+	//indexedVerticesObjects.push_back(sphereObj);
+
+	std::vector<glm::dvec4> cylinderVertices;
+	std::vector<glm::dvec3> cylinderNormals;
+	std::vector<glm::dvec2> cylinderTexCoords;
+	std::vector<unsigned int> cylinderindices;
+	std::vector<unsigned int> cylinderlinesIndices;
+	ShapesGenerator::generateCylinderShape(cylinderVertices, cylinderNormals, cylinderTexCoords, cylinderindices, cylinderlinesIndices);
+	IndexedVerticesObject* cylinderObj = new IndexedVerticesObject(cylinderVertices, cylinderindices, GL_TRIANGLES, glm::dvec4(1, 1, 0, 1));
+	cylinderObj->generateVBO();
+	indexedVerticesObjects.push_back(cylinderObj);
 	
-	indexedVerticesObjects.push_back(sphereObj);
 	
-	
-	//renderer.addVerticesObjects(verticesObjects);
-	//renderer.addIndexedVerticesObjects(indexedVerticesObjects);
-	//renderer.launchLoop();
+	renderer.addVerticesObjects(verticesObjects);
+	renderer.addIndexedVerticesObjects(indexedVerticesObjects);
+	renderer.launchLoop();
 	btVehicleDynamics vehicleDynamics;
 	vehicleDynamics.initPhysics(odd);
 	DebugDraw* dd = new DebugDraw();
@@ -133,6 +142,7 @@ int main(int argc, char** argv)
 	for (int i = 0; i < 10000; i++) {
 		vehicleDynamics.m_dynamicsWorld->stepSimulation(10);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		dd->prepareFrame();
 		vehicleDynamics.m_dynamicsWorld->debugDrawWorld();
 		glDisableVertexAttribArray(0);
 		//gpuDebug();

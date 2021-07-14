@@ -24,8 +24,8 @@
 class ShapesGenerator{
 public:
 	static void generateSphereShape(
-		std::vector<dvec4>& vertices,std::vector<dvec3>& normals, 
-		std::vector<dvec2>& texCoords,std::vector<unsigned int> &indices,
+		std::vector<glm::dvec4>& vertices,std::vector<glm::dvec3>& normals,
+		std::vector<glm::dvec2>& texCoords,std::vector<unsigned int> &indices,
 		std::vector<unsigned int> &lineIndices,int radius=1,int stackCount=100, int sectorCount=100) {
 		double PI = 3.14159265359;
 		// clear memory of prev arrays
@@ -112,6 +112,137 @@ public:
 					lineIndices.push_back(k1);
 					lineIndices.push_back(k1 + 1);
 				}
+			}
+		}
+	}
+	static std::vector<glm::dvec4> getUnitCircleVertices(int sectorCount=100)
+	{
+		const float PI = 3.1415926f;
+		float sectorStep = 2 * PI / sectorCount;
+		float sectorAngle;  // radian
+
+		std::vector<glm::dvec4> unitCircleVertices;
+		for (int i = 0; i <= sectorCount; ++i)
+		{
+			sectorAngle = i * sectorStep;
+			unitCircleVertices.push_back(dvec4(cos(sectorAngle), sin(sectorAngle),0,1));
+			//unitCircleVertices.push_back(); // x
+			//unitCircleVertices.push_back(); // y
+			//unitCircleVertices.push_back(0);                // z
+		}
+		return unitCircleVertices;
+	}
+	static void generateCylinderShape(
+		std::vector<glm::dvec4>& vertices, std::vector<glm::dvec3>& normals,
+		std::vector<glm::dvec2>& texCoords, std::vector<unsigned int>& indices,
+		std::vector<unsigned int>& lineIndices, double height=1, int radius = 1, int sectorCount=100,int stackCount = 10)
+	{
+		// clear memory of prev arrays
+		std::vector<dvec4>().swap(vertices);
+		std::vector<dvec3>().swap(normals);
+		std::vector<dvec2>().swap(texCoords);
+		std::vector<unsigned int>().swap(indices);
+		std::vector<unsigned int>().swap(lineIndices);
+
+		// get unit circle vectors on XY-plane
+		std::vector<glm::dvec4> unitVertices = getUnitCircleVertices();
+
+		// put side vertices to arrays
+		for (int i = 0; i < 2; ++i)
+		{
+			double h = -height / 2.0f + i * height;           // z value; -h/2 to h/2
+			double t = 1.0f - i;                              // vertical tex coord; 1 to 0
+
+			for (int j = 0, k = 0; j <= sectorCount; ++j, k ++)
+			{
+				vertices.push_back(glm::dvec4(unitVertices.at(k).x*radius, unitVertices.at(k).y * radius,h,1));
+				normals.push_back(glm::dvec3(unitVertices.at(k).x, unitVertices.at(k).y, unitVertices.at(k).z));
+				texCoords.push_back(glm::dvec2((double)j / sectorCount, t));
+				
+			}
+		}
+
+		// the starting index for the base/top surface
+		//NOTE: it is used for generating indices later
+		int baseCenterIndex = (int)vertices.size() / 3;
+		int topCenterIndex = baseCenterIndex + sectorCount + 1; // include center vertex
+
+		// put base and top vertices to arrays
+		for (int i = 0; i < 2; ++i)
+		{
+			double h = -height / 2.0 + i * height;           // z value; -h/2 to h/2
+			double nz = -1 + i * 2;                           // z value of normal; -1 to 1
+
+			// center point
+			//vertices.push_back(0);     vertices.push_back(0);     vertices.push_back(h);
+			vertices.push_back(glm::dvec4(0, 0, h, 1));
+			//normals.push_back(0);      normals.push_back(0);      normals.push_back(nz);
+			normals.push_back(glm::dvec3(0, 0, nz));
+			//texCoords.push_back(0.5f); texCoords.push_back(0.5f);
+			texCoords.push_back(glm::dvec2(0.5, 0.5));
+
+			for (int j = 0, k = 0; j < sectorCount; ++j, k ++)
+			{                    // vz
+				vertices.push_back(glm::dvec4(unitVertices.at(k).x*radius,unitVertices.at(k).y*radius,h,1));
+				// normal vector
+				normals.push_back(glm::dvec3(0, 0, nz));
+				// texture coordinate
+				texCoords.push_back(glm::dvec2(-unitVertices.at(k).x * 0.5 + 0.5, -unitVertices.at(k).y * 0.5 + 0.5));
+			}
+		}
+		// generate CCW index list of cylinder triangles
+		//std::vector<int> indices;
+		int k1 = 0;                         // 1st vertex index at base
+		int k2 = sectorCount + 1;           // 1st vertex index at top
+
+		// indices for the side surface
+		for (int i = 0; i < sectorCount; ++i, ++k1, ++k2)
+		{
+			// 2 triangles per sector
+			// k1 => k1+1 => k2
+			indices.push_back(k1);
+			indices.push_back(k1 + 1);
+			indices.push_back(k2);
+
+			// k2 => k1+1 => k2+1
+			indices.push_back(k2);
+			indices.push_back(k1 + 1);
+			indices.push_back(k2 + 1);
+		}
+
+		// indices for the base surface
+		//NOTE: baseCenterIndex and topCenterIndices are pre-computed during vertex generation
+		//      please see the previous code snippet
+		for (int i = 0, k = baseCenterIndex + 1; i < sectorCount; ++i, ++k)
+		{
+			if (i < sectorCount - 1)
+			{
+				indices.push_back(baseCenterIndex);
+				indices.push_back(k + 1);
+				indices.push_back(k);
+			}
+			else // last triangle
+			{
+				indices.push_back(baseCenterIndex);
+				indices.push_back(baseCenterIndex + 1);
+				indices.push_back(k);
+			}
+		}
+
+		// indices for the top surface
+		for (int i = 0, k = topCenterIndex + 1; i < sectorCount; ++i, ++k)
+		{
+			if (i < sectorCount - 1)
+			{
+				indices.push_back(topCenterIndex);
+				indices.push_back(k);
+				indices.push_back(k + 1);
+			}
+			else // last triangle
+			{
+				indices.push_back(topCenterIndex);
+				indices.push_back(k);
+				indices.push_back(topCenterIndex + 1);
 			}
 		}
 	}

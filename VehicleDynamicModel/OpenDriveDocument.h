@@ -819,8 +819,8 @@ struct LaneSection :SBasedProperty {
 				Lanes::Width currentWidth = this->getCurrentPropSOffset(s - this->s, left.value().lane.at(i).laneGeometry.width, defaultWidth);
 				double ds = s - this->s - currentWidth.sOffset;
 				if (index == left.value().lane.at(i).id) {
-					currentWidth = this->getCurrentPropSOffset(s - this->s, left.value().lane.at(i).laneGeometry.width, defaultWidth);
-					ds = s - this->s - currentWidth.sOffset;
+					//currentWidth = this->getCurrentPropSOffset(s - this->s, left.value().lane.at(i).laneGeometry.width, defaultWidth);
+					//ds = s - this->s - currentWidth.sOffset;
 					outerDist = accumulativeWidth + currentWidth.a + currentWidth.b * ds + currentWidth.c * std::pow(ds, 2) + currentWidth.d * std::pow(ds, 3);
 					innerDist = accumulativeWidth;
 					return;
@@ -845,8 +845,8 @@ struct LaneSection :SBasedProperty {
 				Lanes::Width currentWidth = this->getCurrentPropSOffset(s - this->s, right.value().lane.at(i).laneGeometry.width, defaultWidth);
 				double ds = s - this->s - currentWidth.sOffset;
 				if (index == right.value().lane.at(i).id) {
-					currentWidth = this->getCurrentPropSOffset(s - this->s, right.value().lane.at(i).laneGeometry.width, defaultWidth);
-					ds = s - this->s - currentWidth.sOffset;
+					//currentWidth = this->getCurrentPropSOffset(s - this->s, right.value().lane.at(i).laneGeometry.width, defaultWidth);
+					//ds = s - this->s - currentWidth.sOffset;
 					outerDist = accumulativeWidth + currentWidth.a + currentWidth.b * ds + currentWidth.c * std::pow(ds, 2) + currentWidth.d * std::pow(ds, 3);
 					innerDist = accumulativeWidth;
 					return;

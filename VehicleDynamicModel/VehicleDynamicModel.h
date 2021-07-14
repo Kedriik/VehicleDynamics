@@ -91,7 +91,8 @@ public:
 				t1 = ivo->vertices.at(ivo->indexes.at(j  ));
 				t2 = ivo->vertices.at(ivo->indexes.at(j+1));
 				t3 = ivo->vertices.at(ivo->indexes.at(j+2));
-				tMesh->addTriangle(btVector3(t1.x,t1.z,t1.y), btVector3(t2.x,t2.z,t2.y), btVector3(t3.x,t3.z,t3.y));
+				
+				tMesh->addTriangle(btVector3(t1.x,t1.y,t1.z), btVector3(t2.x,t2.y,t2.z), btVector3(t3.x,t3.y,t3.z));
 			}
 			
 		}
@@ -196,9 +197,9 @@ public:
 		m_wheelShape = new btCylinderShapeX(btVector3(wheelWidth, wheelRadius, wheelRadius));
 
 		btVector3 wheelPos[4] = {
-			btVector3(btScalar(-1.)+xOffset, btScalar(FALLHEIGHT - 0.25), btScalar(1.25) + zOffset),
-			btVector3(btScalar(1.) + xOffset, btScalar(FALLHEIGHT - 0.25), btScalar(1.25) + zOffset),
-			btVector3(btScalar(1.) + xOffset, btScalar(FALLHEIGHT - 0.25), btScalar(-1.25) + zOffset),
+			btVector3(btScalar(-1.) + xOffset, btScalar(FALLHEIGHT - 0.25), btScalar( 1.25) + zOffset),
+			btVector3(btScalar( 1.) + xOffset, btScalar(FALLHEIGHT - 0.25), btScalar( 1.25) + zOffset),
+			btVector3(btScalar( 1.) + xOffset, btScalar(FALLHEIGHT - 0.25), btScalar(-1.25) + zOffset),
 			btVector3(btScalar(-1.) + xOffset, btScalar(FALLHEIGHT - 0.25), btScalar(-1.25)+zOffset) };
 
 		for (int i = 0; i < 4; i++)
