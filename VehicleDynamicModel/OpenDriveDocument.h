@@ -22,6 +22,7 @@
 #include "CDT/include/CDT.h"
 #include "Renderer/Renderer.h"
 #include <chrono>
+#include <thread>
 #define GLM_SWIZZLE
 class OpenDriveMath {
 public:
@@ -923,7 +924,7 @@ private:
 			g->generateReferenceLine();
 			std::vector<glm::dvec4> referenceLineCoordinates = g->vertices;
 			double step_ds = g->length / referenceLineCoordinates.size();
-			double epsilon = 0.1;
+			double epsilon = 0.01;
 			double a = -1;
 			if (i == this->planView.geometries.size() - 1) {
 				for (int j = 0; j < referenceLineCoordinates.size(); j++) {
@@ -932,16 +933,16 @@ private:
 					glm::dvec4 positionStart;
 					glm::dvec4 positionEnd;
 					if (j == referenceLineCoordinates.size() - 1) {
-						s_start = g->length;
-						s_end = g->length - epsilon;
+						s_start = g->s + g->length;
+						s_end = g->s + g->length - epsilon;
 						positionStart = referenceLineCoordinates.at(j);
-						positionEnd = g->generatePosition(s_end);
+						positionEnd = g->generatePosition(g->length - epsilon);
 					}
 					else if (j==0) {
-						s_start = 0;
-						s_end = epsilon;
+						s_start = g->s;
+						s_end = g->s+epsilon;
 						positionStart = referenceLineCoordinates.at(0);
-						positionEnd = g->generatePosition(s_end);
+						positionEnd = g->generatePosition(epsilon);
 					}
 					else {
 						s_start = g->s + j * step_ds;
@@ -1030,10 +1031,10 @@ private:
 					glm::dvec4 positionStart;
 					glm::dvec4 positionEnd;
 					if (j == 0) {
-						s_start = 0;
-						s_end = epsilon;
+						s_start = g->s;
+						s_end = g->s+epsilon;
 						positionStart = referenceLineCoordinates.at(0);
-						positionEnd = g->generatePosition(s_end);
+						positionEnd = g->generatePosition(epsilon);
 					}
 					/*else if (j== referenceLineCoordinates.size()-1) {
 						s_start = g->length;
@@ -1205,105 +1206,108 @@ public:
 	std::vector<IndexedVerticesObject*> roadRenderObjects;
 	OpenDriveDocument(std::string filePath);
 	void generateReferenceLines();
+	static void GenerateRoad(int* i, Road* road, std::vector <glm::dvec4>* reference_line_vertices, std::vector<std::string>* connection_road_ids,
+		std::vector<IndexedVerticesObject*>* roadRenderObjects) {
+		bool triangulate = true;
+		double dist_epsilon = 0.1;
+		std::vector <glm::dvec4> road_vertices;
+		std::vector<unsigned int> roadIndexes;
+		std::vector<unsigned int> debugIndexes;
+		std::vector <glm::dvec4> debugVertices;
+		std::vector<glm::dvec4> road_left_edge;
+		std::vector<glm::dvec4> road_right_edge;
+		std::cout << "Starting parsing road from document..." << std::endl;
+		using clock = std::chrono::system_clock;
+		using sec = std::chrono::duration<double>;
+		auto before = clock::now();
+		road->generateRoad(road_vertices, roadIndexes, *reference_line_vertices, road_left_edge, road_right_edge,
+			*connection_road_ids);
+		sec duration = clock::now() - before;
+		std::cout << "Parsin took " << duration.count() << "s" << std::endl;
+
+		std::cout << "Starting triangulation procedure..." << std::endl;
+		before = clock::now();
+		std::vector<double>  delanuator_vertices;
+		std::vector<double>  filtered_close_delanuator_vertices;
+		std::vector<CDT::V2d<double>> vertices;
+		std::vector<CDT::Edge> edges;
+		for (int i = 0; i < road_vertices.size(); i++) {
+			CDT::V2d v = CDT::V2d<double>::make(road_vertices.at(i).x, road_vertices.at(i).y);
+			v.z = road_vertices.at(i).z;
+			vertices.push_back(v);
+		}
+		//CDT::RemoveDuplicates(vertices);
+
+		road_vertices.clear();
+		int left_start, left_end, right_start, right_end;
+		left_start = vertices.size();
+		edges.push_back(CDT::Edge(left_start, vertices.size() + 1));
+		for (int i = 0; i < road_left_edge.size(); i++) {
+			CDT::V2d v = CDT::V2d<double>::make(road_left_edge.at(i).x, road_left_edge.at(i).y);
+			v.z = road_left_edge.at(i).z;
+			vertices.push_back(v);
+			if (i > 1) {
+				edges.push_back(CDT::Edge(vertices.size() - 2, vertices.size() - 1));
+			}
+		}
+		left_end = vertices.size() - 1;
+		right_start = vertices.size();
+		edges.push_back(CDT::Edge(right_start, vertices.size() + 1));
+		for (int i = 0; i < road_right_edge.size(); i++) {
+			CDT::V2d v = CDT::V2d<double>::make(road_right_edge.at(i).x, road_right_edge.at(i).y);
+			v.z = road_right_edge.at(i).z;
+			vertices.push_back(v);
+			if (i > 1) {
+				edges.push_back(CDT::Edge(vertices.size() - 2, vertices.size() - 1));
+			}
+		}
+		right_end = vertices.size() - 1;
+
+		edges.push_back(CDT::Edge(left_start, right_start));
+		edges.push_back(CDT::Edge(left_end, right_end));
+		
+		using Triangulation = CDT::Triangulation<double>;
+
+		Triangulation cdt =
+			Triangulation(CDT::FindingClosestPoint::ClosestRandom, 10);
+		std::cout << "About to triangulate " << vertices.size() << " vertices and " << edges.size() << " edges." << std::endl;
+		try {
+			cdt.insertVertices(vertices);
+			cdt.insertEdges(edges);
+			cdt.eraseOuterTriangles();
+		}
+		catch (std::exception e) {
+			std::cout << e.what() << std::endl;
+			cdt.eraseSuperTriangle();
+		}
+
+		road_vertices.clear();
+		for (int i = 0; i < cdt.vertices.size(); i++) {
+			road_vertices.push_back(glm::dvec4(cdt.vertices.at(i).pos.x, cdt.vertices.at(i).pos.y, cdt.vertices.at(i).pos.z, 1));
+		}
+
+		for (int i = 0; i < cdt.triangles.size(); i++) {
+			roadIndexes.push_back(cdt.triangles.at(i).vertices.at(0));
+			roadIndexes.push_back(cdt.triangles.at(i).vertices.at(1));
+			roadIndexes.push_back(cdt.triangles.at(i).vertices.at(2));
+		}
+		duration = clock::now() - before;
+		std::cout << "Triangulation took " << duration.count() << "s" << std::endl;
+		IndexedVerticesObject* iobj = new IndexedVerticesObject(road_vertices, roadIndexes, GL_TRIANGLES);
+		roadRenderObjects->push_back(iobj);
+	}
 	void generateRoads() {
+		std::vector<std::thread*> _threads;
 		for (int i = 0; i < this->roads.size(); i++) {
-			std::cout << "Generating road:" << i + 1 << "/" << this->roads.size() <<" with length:"<<this->roads.at(i).length<<"."<< std::endl;
-			bool triangulate = true;
-			double dist_epsilon = 0.1;
-			std::vector <glm::dvec4> road_vertices;
-			std::vector<unsigned int> roadIndexes;
-			std::vector<unsigned int> debugIndexes;
-			std::vector <glm::dvec4> debugVertices;
-			std::vector<glm::dvec4> road_left_edge;
-			std::vector<glm::dvec4> road_right_edge;
-			std::cout << "Starting parsing road from document..." << std::endl;
-			using clock = std::chrono::system_clock;
-			using sec = std::chrono::duration<double>;
-			auto before = clock::now();
-			this->roads.at(i).generateRoad(road_vertices, roadIndexes, reference_line_vertices, road_left_edge, road_right_edge,
-				connection_road_ids);
-			sec duration = clock::now() - before;
-			std::cout << "Parsin took " << duration.count() << "s" << std::endl;
-
-			std::cout << "Starting triangulation procedure..." << std::endl;
-			before = clock::now();
-			std::vector<double>  delanuator_vertices;
-			std::vector<double>  filtered_close_delanuator_vertices;
-			std::vector<CDT::V2d<double>> vertices;
-			std::vector<CDT::Edge> edges;
-			for (int i = 0; i < road_vertices.size(); i++) {
-				CDT::V2d v = CDT::V2d<double>::make(road_vertices.at(i).x, road_vertices.at(i).y);
-				v.z = road_vertices.at(i).z;
-				vertices.push_back(v);
-			}
-			//CDT::RemoveDuplicates(vertices);
-			
-			road_vertices.clear();
-			int left_start, left_end, right_start, right_end;
-			left_start = vertices.size();
-			edges.push_back(CDT::Edge(left_start, vertices.size() + 1));
-			for (int i = 0; i < road_left_edge.size(); i++) {
-				CDT::V2d v = CDT::V2d<double>::make(road_left_edge.at(i).x, road_left_edge.at(i).y);
-				v.z = road_left_edge.at(i).z;
-				vertices.push_back(v);
-				if (i > 1) {
-					edges.push_back(CDT::Edge(vertices.size() - 2, vertices.size() - 1));
-				}
-			}
-			left_end = vertices.size() - 1;
-			right_start = vertices.size();
-			edges.push_back(CDT::Edge(right_start, vertices.size() + 1));
-			for (int i = 0; i < road_right_edge.size(); i++) {
-				CDT::V2d v = CDT::V2d<double>::make(road_right_edge.at(i).x, road_right_edge.at(i).y);
-				v.z = road_right_edge.at(i).z;
-				vertices.push_back(v);
-				if (i > 1) {
-					edges.push_back(CDT::Edge(vertices.size() - 2, vertices.size() - 1));
-				}
-			}
-			right_end = vertices.size() - 1;
-
-			edges.push_back(CDT::Edge(left_start, right_start));
-			edges.push_back(CDT::Edge(left_end, right_end));
-
-			for (auto v : vertices) {
-				debugVertices.push_back(glm::dvec4(v.x, v.y, v.z, 1));
-			}
-			for (auto e : edges) {
-				debugIndexes.push_back(e.v1());
-				debugIndexes.push_back(e.v2());
-			}
-			this->roads.at(i).debugIndexes = debugIndexes;
-			this->roads.at(i).debugVertices = debugVertices;
-			using Triangulation = CDT::Triangulation<double>;
-
-			Triangulation cdt =
-				Triangulation(CDT::FindingClosestPoint::ClosestRandom, 10);
-			std::cout << "About to triangulate " << vertices.size() << " vertices and " << edges.size() << " edges." << std::endl;
-			try{
-				cdt.insertVertices(vertices);
-				cdt.insertEdges(edges);
-				cdt.eraseOuterTriangles();
-			}
-			catch (std::exception e) {
-				std::cout << e.what() << std::endl;
-				cdt.eraseSuperTriangle();
-			}
-			
-			road_vertices.clear();
-			for (int i = 0; i < cdt.vertices.size(); i++) {
-				road_vertices.push_back(glm::dvec4(cdt.vertices.at(i).pos.x, cdt.vertices.at(i).pos.y, cdt.vertices.at(i).pos.z, 1));
-			}
-
-			for (int i = 0; i < cdt.triangles.size(); i++) {
-				roadIndexes.push_back(cdt.triangles.at(i).vertices.at(0));
-				roadIndexes.push_back(cdt.triangles.at(i).vertices.at(1));
-				roadIndexes.push_back(cdt.triangles.at(i).vertices.at(2));
-			}
-			duration = clock::now() - before;
-			std::cout << "Triangulation took " << duration.count() << "s" << std::endl;
-			IndexedVerticesObject* iobj = new IndexedVerticesObject(road_vertices, roadIndexes, GL_TRIANGLES);
-			this->roadRenderObjects.push_back(iobj);
+			_threads.push_back(new std::thread(OpenDriveDocument::GenerateRoad, &i, &roads.at(i),&reference_line_vertices,&connection_road_ids,&roadRenderObjects));
+			//t.detach();
+			//this->generateRoad(i, roads.at(i));
+		}
+		for (auto t : _threads) {
+			t->join();
+		}
+		for (auto t : _threads) {
+			delete t;
 		}
 	}
 	void printOpenDriveDocument();

@@ -40,8 +40,8 @@ int main(int argc, char** argv)
 	for (int i = 0; i < odd.getRoads().size(); i++) {
 		Road r = odd.getRoads().at(i);
 		VerticesObject * obj = new VerticesObject(r.getReferencePoints(), GL_LINE_STRIP,glm::vec4(1,0,0,1));
-		//obj->generateVBO();
-		//verticesObjects.push_back(obj);
+		obj->generateVBO();
+		verticesObjects.push_back(obj);
 
 		obj = new VerticesObject(r._vertices, GL_POINTS, glm::vec4(0, 1, 0, 1));
 		//obj->generateVBO();
