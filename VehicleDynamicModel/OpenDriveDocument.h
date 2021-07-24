@@ -729,6 +729,14 @@ namespace Lanes {
 		}
 		Width() {}
 	};
+	struct LaneOffset {
+		double s = 0, a = 0, b = 0, c = 0, d = 0;
+		LaneOffset(double _s, double _a, double _b, double _c, double _d):
+		s(_s),a(_a),b(_b),c(_c),d(_d){
+			if (s < 0) throw new std::exception("S cannot be negative");
+		}
+		LaneOffset() {}
+	};
 	struct Border {
 		double sOffset = 0, a = 0, b = 0, c = 0, d = 0;
 		Border(double _sOffset, double _a, double _b, double _c, double _d) :
@@ -761,7 +769,7 @@ namespace Lanes {
 	};
 	struct Lane {
 		int id;
-		Type type;
+		std::string type;
 		std::optional<bool> level = std::optional<bool>();
 		std::vector<Height> height;
 		LaneGeometry laneGeometry;
@@ -980,7 +988,7 @@ private:
 						Lanes::Right right = laneSection.right.value();
 						for (int i = 0; i < right.lane.size(); i++) {
 							double innerW, outerW;
-							laneSection.getCurrentRightWidth(s_start, -(i + 1), innerW, outerW);
+							laneSection.getCurrentRightWidth(s_start, right.lane.at(i).id, innerW, outerW);
 							glm::dvec3 innerPos = glm::dvec3(positionStart) + right_direction * innerW;
 							glm::dvec3 outerPos = glm::dvec3(positionStart) + right_direction * outerW;
 							LineSegment lineSegment = LineSegment();
@@ -1003,7 +1011,7 @@ private:
 						Lanes::Left left = laneSection.left.value();
 						for (int i = 0; i < left.lane.size(); i++) {
 							double innerW, outerW;
-							laneSection.getCurrentLeftWidth(s_start, i + 1, innerW, outerW);
+							laneSection.getCurrentLeftWidth(s_start, left.lane.at(i).id, innerW, outerW);
 							glm::dvec3 innerPos = glm::dvec3(positionStart) + left_direction * innerW;
 							glm::dvec3 outerPos = glm::dvec3(positionStart) + left_direction * outerW;
 							LineSegment lineSegment = LineSegment();
@@ -1078,7 +1086,7 @@ private:
 						Lanes::Right right = laneSection.right.value();
 						for (int i = 0; i < right.lane.size(); i++) {
 							double innerW, outerW;
-							laneSection.getCurrentRightWidth(s_start, -(i + 1), innerW, outerW);
+							laneSection.getCurrentRightWidth(s_start, right.lane.at(i).id, innerW, outerW);
 							glm::dvec3 innerPos = glm::dvec3(positionStart) + right_direction * innerW;
 							glm::dvec3 outerPos = glm::dvec3(positionStart) + right_direction * outerW;
 							LineSegment lineSegment = LineSegment();
@@ -1101,7 +1109,7 @@ private:
 						Lanes::Left left = laneSection.left.value();
 						for (int i = 0; i < left.lane.size(); i++) {
 							double innerW, outerW;
-							laneSection.getCurrentLeftWidth(s_start, i + 1, innerW, outerW);
+							laneSection.getCurrentLeftWidth(s_start, left.lane.at(i).id, innerW, outerW);
 							glm::dvec3 innerPos = glm::dvec3(positionStart) + left_direction * innerW;
 							glm::dvec3 outerPos = glm::dvec3(positionStart) + left_direction * outerW;
 							LineSegment lineSegment = LineSegment();

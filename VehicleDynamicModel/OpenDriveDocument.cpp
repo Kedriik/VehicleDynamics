@@ -168,8 +168,12 @@ void OpenDriveDocument::populateLaneSections(tinyxml2::XMLElement* xml_road, std
 			lanes.clear();
 			while (xml_lane != nullptr) {
 				Lanes::Lane lane;
-				this->populateLane(xml_lane, lane);
-				lanes.push_back(lane);
+				const char* lane_type;
+				xml_lane->QueryStringAttribute("type", &lane_type);
+				if(std::string(lane_type) != "border" && std::string(lane_type) != "none"){
+					this->populateLane(xml_lane, lane);
+					lanes.push_back(lane);
+				}
 				xml_lane = xml_lane->NextSiblingElement("lane");
 			}
 			Lanes::Left left = Lanes::Left(lanes);
@@ -181,8 +185,12 @@ void OpenDriveDocument::populateLaneSections(tinyxml2::XMLElement* xml_road, std
 		lanes.clear();
 		while (xml_lane != nullptr) {
 				Lanes::Lane lane;
-				this->populateLane(xml_lane, lane);
-				lanes.push_back(lane);
+				const char* lane_type;
+				xml_lane->QueryStringAttribute("type", &lane_type);
+				if (std::string(lane_type) != "border" && std::string(lane_type) != "none") {
+					this->populateLane(xml_lane, lane);
+					lanes.push_back(lane);
+				}
 				xml_lane = xml_lane->NextSiblingElement("lane");
 			}
 			Lanes::Right right = Lanes::Right(lanes);
@@ -213,6 +221,7 @@ void OpenDriveDocument::populateLane(tinyxml2::XMLElement* xml_lane, Lanes::Lane
 	type = xml_lane->Attribute("type");
 	lane.id = id;
 	lane.level = std::optional<bool>(level);
+	lane.type = type;
 	//
 	//if (xml_lane->QueryDoubleAttribute("s", &s) != tinyxml2::XMLError::XML_SUCCESS) throw "Something wrong with 's' in lane section";
 	Lanes::Link link;
