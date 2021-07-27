@@ -23,6 +23,7 @@
 #include "Renderer/Renderer.h"
 #include <chrono>
 #include <thread>
+#include <mutex>
 #define GLM_SWIZZLE
 class OpenDriveMath {
 public:
@@ -893,6 +894,8 @@ struct LineSegment {
 	LineSegment(std::vector<glm::dvec4> _vertices, int _t_section_n_points = 10) :t_section_n_points(_t_section_n_points),
 		vertices(_vertices) {}
 };
+
+
 class Road {
 	friend class OpenDriveDocument;
 public:
@@ -984,11 +987,12 @@ private:
 					glm::dvec3 left_direction = superelevation_rotation * glm::normalize(glm::cross(up, s_direction));
 					glm::dvec3 right_direction = superelevation_rotation * glm::normalize(glm::cross(s_direction, up));
 					LaneSection laneSection = this->roadLanes.getCurrentLaneSection(s_start);
-					if (laneSection.right.has_value()) {
+					if (laneSection.right.has_value() && laneSection.right.value().lane.size() > 0) {
 						Lanes::Right right = laneSection.right.value();
 						for (int i = 0; i < right.lane.size(); i++) {
 							double innerW, outerW;
 							laneSection.getCurrentRightWidth(s_start, right.lane.at(i).id, innerW, outerW);
+							if (innerW == outerW) continue;
 							glm::dvec3 innerPos = glm::dvec3(positionStart) + right_direction * innerW;
 							glm::dvec3 outerPos = glm::dvec3(positionStart) + right_direction * outerW;
 							LineSegment lineSegment = LineSegment();
@@ -1007,11 +1011,14 @@ private:
 					else {
 						road_right_edges.push_back(positionStart);
 					}
-					if (laneSection.left.has_value()) {
+					if (laneSection.left.has_value() && laneSection.left.value().lane.size()>0) {
 						Lanes::Left left = laneSection.left.value();
 						for (int i = 0; i < left.lane.size(); i++) {
 							double innerW, outerW;
 							laneSection.getCurrentLeftWidth(s_start, left.lane.at(i).id, innerW, outerW);
+							if (innerW == outerW) {
+								continue;
+							}
 							glm::dvec3 innerPos = glm::dvec3(positionStart) + left_direction * innerW;
 							glm::dvec3 outerPos = glm::dvec3(positionStart) + left_direction * outerW;
 							LineSegment lineSegment = LineSegment();
@@ -1044,12 +1051,6 @@ private:
 						positionStart = referenceLineCoordinates.at(0);
 						positionEnd = g->generatePosition(epsilon);
 					}
-					/*else if (j== referenceLineCoordinates.size()-1) {
-						s_start = g->length;
-						s_end = g->s + j * step_ds;
-						positionStart = referenceLineCoordinates.at(j);
-						positionEnd = g->generatePosition(s_end);
-					}*/
 					else {
 						s_start = g->s + j * step_ds;
 						s_end = g->s + (j + 1) * step_ds;
@@ -1082,11 +1083,14 @@ private:
 					glm::dvec3 left_direction = superelevation_rotation * glm::normalize(glm::cross(up, s_direction));
 					glm::dvec3 right_direction = superelevation_rotation * glm::normalize(glm::cross(s_direction, up));
 					LaneSection laneSection = this->roadLanes.getCurrentLaneSection(s_start);
-					if (laneSection.right.has_value()) {
+					if (laneSection.right.has_value() && laneSection.right.value().lane.size()>0) {
 						Lanes::Right right = laneSection.right.value();
 						for (int i = 0; i < right.lane.size(); i++) {
 							double innerW, outerW;
 							laneSection.getCurrentRightWidth(s_start, right.lane.at(i).id, innerW, outerW);
+							if (innerW == outerW) {
+								continue;
+							}
 							glm::dvec3 innerPos = glm::dvec3(positionStart) + right_direction * innerW;
 							glm::dvec3 outerPos = glm::dvec3(positionStart) + right_direction * outerW;
 							LineSegment lineSegment = LineSegment();
@@ -1105,11 +1109,12 @@ private:
 					else {
 						road_right_edges.push_back(positionStart);
 					}
-					if (laneSection.left.has_value()) {
+					if (laneSection.left.has_value() && laneSection.left.value().lane.size()>0) {
 						Lanes::Left left = laneSection.left.value();
 						for (int i = 0; i < left.lane.size(); i++) {
 							double innerW, outerW;
 							laneSection.getCurrentLeftWidth(s_start, left.lane.at(i).id, innerW, outerW);
+							if (innerW == outerW) continue;
 							glm::dvec3 innerPos = glm::dvec3(positionStart) + left_direction * innerW;
 							glm::dvec3 outerPos = glm::dvec3(positionStart) + left_direction * outerW;
 							LineSegment lineSegment = LineSegment();
@@ -1179,7 +1184,7 @@ private:
 	std::vector<Road> roads;
 	std::vector<std::string> connection_road_ids;
 	tinyxml2::XMLDocument doc;
-
+	static std::mutex g_cout_mutex;
 	Link createLink(tinyxml2::XMLElement* xml_road);
 	template <class T>
 	void populateCessor(tinyxml2::XMLElement* xml_cessor, T& cessor);
@@ -1212,10 +1217,19 @@ private:
 public:
 	std::vector <glm::dvec4> reference_line_vertices;
 	std::vector<IndexedVerticesObject*> roadRenderObjects;
+	std::vector<IndexedVerticesObject*> indexedDebug;
+	std::vector<VerticesObject*> debug;
 	OpenDriveDocument(std::string filePath);
 	void generateReferenceLines();
-	static void GenerateRoad(int* i, Road* road, std::vector <glm::dvec4>* reference_line_vertices, std::vector<std::string>* connection_road_ids,
-		std::vector<IndexedVerticesObject*>* roadRenderObjects) {
+	static void GenerateRoad(int ii, Road* road, std::vector <glm::dvec4>* reference_line_vertices, std::vector<std::string>* connection_road_ids,
+		std::vector<IndexedVerticesObject*>* roadRenderObjects, std::vector<IndexedVerticesObject*>* indexedDebug = nullptr, 
+		std::vector<VerticesObject*>* debug=nullptr) {
+		g_cout_mutex.lock();
+		std::cout << "Starting thread for road id " << road->id << std::endl;
+		g_cout_mutex.unlock();
+		using clock = std::chrono::system_clock;
+		using sec = std::chrono::duration<double>;
+		auto before = clock::now();
 		bool triangulate = true;
 		double dist_epsilon = 0.1;
 		std::vector <glm::dvec4> road_vertices;
@@ -1224,19 +1238,11 @@ public:
 		std::vector <glm::dvec4> debugVertices;
 		std::vector<glm::dvec4> road_left_edge;
 		std::vector<glm::dvec4> road_right_edge;
-		std::cout << "Starting parsing road from document..." << std::endl;
-		using clock = std::chrono::system_clock;
-		using sec = std::chrono::duration<double>;
-		auto before = clock::now();
+		
 		road->generateRoad(road_vertices, roadIndexes, *reference_line_vertices, road_left_edge, road_right_edge,
 			*connection_road_ids);
 		sec duration = clock::now() - before;
-		std::cout << "Parsin took " << duration.count() << "s" << std::endl;
-
-		std::cout << "Starting triangulation procedure..." << std::endl;
 		before = clock::now();
-		std::vector<double>  delanuator_vertices;
-		std::vector<double>  filtered_close_delanuator_vertices;
 		std::vector<CDT::V2d<double>> vertices;
 		std::vector<CDT::Edge> edges;
 		for (int i = 0; i < road_vertices.size(); i++) {
@@ -1244,9 +1250,8 @@ public:
 			v.z = road_vertices.at(i).z;
 			vertices.push_back(v);
 		}
-		//CDT::RemoveDuplicates(vertices);
 
-		road_vertices.clear();
+		//road_vertices.clear();
 		int left_start, left_end, right_start, right_end;
 		left_start = vertices.size();
 		edges.push_back(CDT::Edge(left_start, vertices.size() + 1));
@@ -1273,12 +1278,29 @@ public:
 
 		edges.push_back(CDT::Edge(left_start, right_start));
 		edges.push_back(CDT::Edge(left_end, right_end));
-		
+		if(debug!=nullptr){
+			VerticesObject* vobj = new VerticesObject(road_vertices, GL_POINTS);
+			debug->push_back(vobj);
+		}
+		std::vector<glm::dvec4> edgesVertices;
+		if (indexedDebug != nullptr) {
+			
+			for (auto v : vertices) {
+				edgesVertices.push_back(glm::dvec4(v.x, v.y, v.z,1));
+			}
+			std::vector<unsigned int> edgesIndexes;
+			for (auto edge : edges) {
+				edgesIndexes.push_back(edge.v1());
+				edgesIndexes.push_back(edge.v2());
+			}
+			IndexedVerticesObject* ivobj = new IndexedVerticesObject(edgesVertices, edgesIndexes, GL_LINES);
+			indexedDebug->push_back(ivobj);
+		}
 		using Triangulation = CDT::Triangulation<double>;
 
 		Triangulation cdt =
 			Triangulation(CDT::FindingClosestPoint::ClosestRandom, 10);
-		std::cout << "About to triangulate " << vertices.size() << " vertices and " << edges.size() << " edges." << std::endl;
+		
 		try {
 			cdt.insertVertices(vertices);
 			cdt.insertEdges(edges);
@@ -1299,17 +1321,22 @@ public:
 			roadIndexes.push_back(cdt.triangles.at(i).vertices.at(1));
 			roadIndexes.push_back(cdt.triangles.at(i).vertices.at(2));
 		}
-		duration = clock::now() - before;
-		std::cout << "Triangulation took " << duration.count() << "s" << std::endl;
+		
+		
 		IndexedVerticesObject* iobj = new IndexedVerticesObject(road_vertices, roadIndexes, GL_TRIANGLES);
 		roadRenderObjects->push_back(iobj);
+
+		duration = clock::now() - before;
+		g_cout_mutex.lock();
+		std::cout << "Thread for road id " <<road->id<<" finished in " << duration.count() << "s" << std::endl;
+		g_cout_mutex.unlock();
 	}
 	void generateRoads() {
 		std::vector<std::thread*> _threads;
-		for (int i = 0; i < this->roads.size(); i++) {
-			_threads.push_back(new std::thread(OpenDriveDocument::GenerateRoad, &i, &roads.at(i),&reference_line_vertices,&connection_road_ids,&roadRenderObjects));
-			//t.detach();
-			//this->generateRoad(i, roads.at(i));
+		int i = 0;
+		for (i; i < this->roads.size(); i++) {
+			_threads.push_back(new std::thread(OpenDriveDocument::GenerateRoad, i, 
+				&roads.at(i),&reference_line_vertices,&connection_road_ids,&roadRenderObjects,nullptr,nullptr));
 		}
 		for (auto t : _threads) {
 			t->join();

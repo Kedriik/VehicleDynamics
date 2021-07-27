@@ -1,4 +1,5 @@
 #include "OpenDriveDocument.h"
+std::mutex OpenDriveDocument::g_cout_mutex;
 OpenDriveDocument::OpenDriveDocument(std::string filePath) {
 	std::ifstream myfile;
 	doc.LoadFile(filePath.c_str());

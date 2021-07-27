@@ -41,7 +41,7 @@ int main(int argc, char** argv)
 		Road r = odd.getRoads().at(i);
 		VerticesObject * obj = new VerticesObject(r.getReferencePoints(), GL_LINE_STRIP,glm::vec4(1,0,0,1));
 		obj->generateVBO();
-		verticesObjects.push_back(obj);
+		//verticesObjects.push_back(obj);
 
 		obj = new VerticesObject(r._vertices, GL_POINTS, glm::vec4(0, 1, 0, 1));
 		//obj->generateVBO();
@@ -70,15 +70,22 @@ int main(int argc, char** argv)
 	*/
 	for (auto r : odd.getRoads()) {
 		IndexedVerticesObject* idobj = new IndexedVerticesObject(r.debugVertices, r.debugIndexes, GL_LINES, glm::dvec4(238.0 / 255.0, 130.0 / 255.0, 238.0 / 255.0, 1));
-		//idobj->generateVBO();
-		//indexedVerticesObjects.push_back(idobj);
+		idobj->generateVBO();
+		indexedVerticesObjects.push_back(idobj);
 	}
 	for (auto ro : odd.roadRenderObjects) {
 		ro->generateVBO();
 		indexedVerticesObjects.push_back(ro);
 		
 	}
-	
+	for (auto v : odd.debug) {
+		v->generateVBO();
+		verticesObjects.push_back(v);
+	}
+	for (auto v : odd.indexedDebug) {
+		v->generateVBO();
+		indexedVerticesObjects.push_back(v);
+	}
 	//idobj->generateVBO();
 	//indexedVerticesObjects.push_back(idobj);
 	double gap = 5.0;
@@ -133,23 +140,25 @@ int main(int argc, char** argv)
 	renderer.addVerticesObjects(verticesObjects);
 	renderer.addIndexedVerticesObjects(indexedVerticesObjects);
 	renderer.launchLoop();
-	btVehicleDynamics vehicleDynamics;
-	vehicleDynamics.initPhysics(odd);
-	DebugDraw* dd = new DebugDraw();
-	dd->init(800, 600);
-	vehicleDynamics.m_dynamicsWorld->setDebugDrawer(dd);
-	vehicleDynamics.m_dynamicsWorld->getDebugDrawer()->setDebugMode(btIDebugDraw::DBG_DrawWireframe);
-	for (int i = 0; i < 10000; i++) {
-		vehicleDynamics.m_dynamicsWorld->stepSimulation(10);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		dd->prepareFrame();
-		vehicleDynamics.m_dynamicsWorld->debugDrawWorld();
-		glDisableVertexAttribArray(0);
-		//gpuDebug();
-		glfwSwapBuffers(dd->window);
-		glfwPollEvents();
+	bool doPhysics = false;
+	if(doPhysics){
+		btVehicleDynamics vehicleDynamics;
+		vehicleDynamics.initPhysics(odd);
+		DebugDraw* dd = new DebugDraw();
+		dd->init(800, 600);
+		vehicleDynamics.m_dynamicsWorld->setDebugDrawer(dd);
+		vehicleDynamics.m_dynamicsWorld->getDebugDrawer()->setDebugMode(btIDebugDraw::DBG_DrawWireframe);
+		for (int i = 0; i < 10000; i++) {
+			vehicleDynamics.m_dynamicsWorld->stepSimulation(10);
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			dd->prepareFrame();
+			vehicleDynamics.m_dynamicsWorld->debugDrawWorld();
+			glDisableVertexAttribArray(0);
+			//gpuDebug();
+			glfwSwapBuffers(dd->window);
+			glfwPollEvents();
+		}
 	}
-	
 	for (auto vo : verticesObjects) {
 		delete vo;
 	}
