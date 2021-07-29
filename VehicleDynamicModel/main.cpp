@@ -53,6 +53,15 @@ int main(int argc, char** argv)
 			l->generateVBO();
 			verticesObjects.push_back(l);
 		}
+		for (auto lane : r.lanesRenderObjects) {
+			lane->generateVBO();
+			indexedVerticesObjects.push_back(lane);
+		}
+
+		for (auto edge : r.debugEdgeRenderObjects) {
+			edge->generateVBO();
+			indexedVerticesObjects.push_back(edge);
+		}
 	}
 	/*VerticesObject* obj = new VerticesObject(odd.road_vertices, GL_TRIANGLES, glm::dvec4(0, 0.7, 0, 1));
 	obj->generateVBO();
