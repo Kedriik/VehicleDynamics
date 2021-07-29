@@ -902,6 +902,7 @@ public:
 	std::vector<unsigned int> debugIndexes;
 	std::vector <glm::dvec4> debugVertices;
 	std::vector <glm::dvec4> _vertices;
+	std::vector<VerticesObject*> debugLanesRenderObject;
 private:
 	double length;
 	std::string id;
@@ -917,10 +918,101 @@ private:
 	std::vector<glm::dvec4> referenceLinePoints;
 	std::vector<RoadSegment> roadSegments;
 
-	//void 
-	template <class T>
-	void fillLanesVertices(T _lane, std::vector<glm::dvec4> vertices) {
 
+	void generateRoadLanes(std::vector<glm::dvec4>& reference_line_vertices) {
+		ElevationProfile ep = this->elevationProfile.value_or(ElevationProfile());
+		LateralProfile lp = this->lateralProfile.value_or(LateralProfile());
+		double road_s = 0;
+		for (LaneSection laneSection : this->roadLanes.laneSections) {
+			if (laneSection.right.has_value()) {
+				for (Lanes::Lane lane : laneSection.right.value().lane) {
+					std::vector<glm::dvec4> laneVertices;
+					std::vector<unsigned int> laneEdgeIndexes;
+					for (Geometry* geometry : this->getPlanView().geometries) {
+						//geometry->generateReferenceLine();
+						double current_s = 0;
+						double step_ds = 1;
+						double step_ds_epsilon = 0.1;
+						double t_dir_ds = 0.1;
+						while (current_s <= geometry->length) {
+							Elevation elevation = ep.getCurrentElevation(road_s);
+							Superelevation superelevation = lp.getCurrentSuperelevation(road_s);
+							Elevation elevation_ds = ep.getCurrentElevation(road_s + step_ds_epsilon);
+							Superelevation superelevation_ds = lp.getCurrentSuperelevation(road_s + step_ds_epsilon);
+							glm::dvec4 position = geometry->generatePosition(current_s);
+							glm::dvec4 position_ds = geometry->generatePosition((current_s + step_ds_epsilon));
+							double ds_start = road_s - elevation.s;
+							position.z = elevation.a + elevation.b * ds_start + elevation.c * std::pow(ds_start, 2) + elevation.d * std::pow(ds_start, 3);
+							position.w = superelevation.a + superelevation.b * ds_start + superelevation.c * std::pow(ds_start, 2) + superelevation.d * std::pow(ds_start, 3);
+							ds_start = (road_s + step_ds_epsilon) - elevation_ds.s;
+							position_ds.z = elevation_ds.a + elevation_ds.b * ds_start + elevation_ds.c * std::pow(ds_start, 2) + elevation_ds.d * std::pow(ds_start, 3);
+							position_ds.w = superelevation_ds.a + superelevation_ds.b * ds_start + superelevation_ds.c * std::pow(ds_start, 2) + superelevation_ds.d * std::pow(ds_start, 3);
+							glm::dvec3 up = glm::dvec3(0, 0, 1);
+							glm::dvec3 s_direction = glm::dvec3(glm::normalize(position_ds - position));
+							glm::dquat superelevation_rotation = glm::angleAxis(position.w, glm::dvec3(s_direction));
+							//glm::dvec3 left_direction = superelevation_rotation * glm::normalize(glm::cross(up, s_direction));
+							glm::dvec3 right_direction = superelevation_rotation * glm::normalize(glm::cross(s_direction, up));
+							double innerW, outerW;
+							laneSection.getCurrentRightWidth(current_s, lane.id, innerW, outerW);
+							double accumulated_width = innerW;
+							while(accumulated_width<=outerW){
+								glm::dvec3 pos = std::min(accumulated_width, outerW) * right_direction+glm::dvec3(position);
+								laneVertices.push_back(glm::dvec4(pos,1.0));
+								accumulated_width += t_dir_ds;
+							}
+							current_s += step_ds;
+							road_s += step_ds;
+						}
+					}
+					VerticesObject* vobj = new VerticesObject(laneVertices, GL_POINTS, glm::dvec4(1, 0, 0, 1));
+					this->debugLanesRenderObject.push_back(vobj);
+				}
+			}
+			if (laneSection.left.has_value()) {
+				for (Lanes::Lane lane : laneSection.left.value().lane) {
+					std::vector<glm::dvec4> laneVertices;
+					std::vector<unsigned int> laneEdgeIndexes;
+					for (Geometry* geometry : this->getPlanView().geometries) {
+						//geometry->generateReferenceLine();
+						double current_s = 0;
+						double step_ds = 1;
+						double step_ds_epsilon = 0.1;
+						double t_dir_ds = 0.1;
+						while (current_s <= geometry->length) {
+							Elevation elevation = ep.getCurrentElevation(road_s);
+							Superelevation superelevation = lp.getCurrentSuperelevation(road_s);
+							Elevation elevation_ds = ep.getCurrentElevation(road_s + step_ds_epsilon);
+							Superelevation superelevation_ds = lp.getCurrentSuperelevation(road_s + step_ds_epsilon);
+							glm::dvec4 position = geometry->generatePosition(current_s);
+							glm::dvec4 position_ds = geometry->generatePosition((current_s + step_ds_epsilon));
+							double ds_start = road_s - elevation.s;
+							position.z = elevation.a + elevation.b * ds_start + elevation.c * std::pow(ds_start, 2) + elevation.d * std::pow(ds_start, 3);
+							position.w = superelevation.a + superelevation.b * ds_start + superelevation.c * std::pow(ds_start, 2) + superelevation.d * std::pow(ds_start, 3);
+							ds_start = (road_s + step_ds_epsilon) - elevation_ds.s;
+							position_ds.z = elevation_ds.a + elevation_ds.b * ds_start + elevation_ds.c * std::pow(ds_start, 2) + elevation_ds.d * std::pow(ds_start, 3);
+							position_ds.w = superelevation_ds.a + superelevation_ds.b * ds_start + superelevation_ds.c * std::pow(ds_start, 2) + superelevation_ds.d * std::pow(ds_start, 3);
+							glm::dvec3 up = glm::dvec3(0, 0, 1);
+							glm::dvec3 s_direction = glm::dvec3(glm::normalize(position_ds - position));
+							glm::dquat superelevation_rotation = glm::angleAxis(position.w, glm::dvec3(s_direction));
+							glm::dvec3 left_direction = superelevation_rotation * glm::normalize(glm::cross(up, s_direction));
+							//glm::dvec3 right_direction = superelevation_rotation * glm::normalize(glm::cross(s_direction, up));
+							double innerW, outerW;
+							laneSection.getCurrentLeftWidth(current_s, lane.id, innerW, outerW);
+							double accumulated_width = innerW;
+							while (accumulated_width <= outerW) {
+								glm::dvec3 pos = std::min(accumulated_width, outerW) * left_direction + glm::dvec3(position);
+								laneVertices.push_back(glm::dvec4(pos, 1.0));
+								accumulated_width += t_dir_ds;
+							}
+							current_s += step_ds;
+							road_s += step_ds;
+						}
+					}
+					VerticesObject* vobj = new VerticesObject(laneVertices, GL_POINTS, glm::dvec4(1, 0, 0, 1));
+					this->debugLanesRenderObject.push_back(vobj);
+				}
+			}
+		}
 	}
 	void generateRoad(std::vector<glm::dvec4>& vertices, std::vector<unsigned int>& roadIndexes, std::vector<glm::dvec4>& reference_line_vertices,
 		std::vector<glm::dvec4>& road_left_edges, std::vector<glm::dvec4>& road_right_edges, std::vector<std::string>& connection_road_ids) {
@@ -992,13 +1084,16 @@ private:
 						for (int i = 0; i < right.lane.size(); i++) {
 							double innerW, outerW;
 							laneSection.getCurrentRightWidth(s_start, right.lane.at(i).id, innerW, outerW);
-							if (innerW == outerW) continue;
+							/*if (innerW == outerW) {
+								//road_right_edges.push_back(positionStart); 
+								continue;
+								}*/
 							glm::dvec3 innerPos = glm::dvec3(positionStart) + right_direction * innerW;
 							glm::dvec3 outerPos = glm::dvec3(positionStart) + right_direction * outerW;
 							LineSegment lineSegment = LineSegment();
 							int n_points = int((outerW - innerW) / triangulation_step + 1);
 							double t_ds = (outerW - innerW) / n_points;
-							glm::dvec3 t_dir = glm::normalize(outerPos - innerPos);
+							glm::dvec3 t_dir = right_direction;// glm::normalize(outerPos - innerPos);
 
 							if (right.lane.size() - 1 == i)
 								road_right_edges.push_back(glm::dvec4(innerPos + t_dir * t_ds * double(n_points + edge_epsilon), 0.0));
@@ -1016,15 +1111,16 @@ private:
 						for (int i = 0; i < left.lane.size(); i++) {
 							double innerW, outerW;
 							laneSection.getCurrentLeftWidth(s_start, left.lane.at(i).id, innerW, outerW);
-							if (innerW == outerW) {
+							/*if (innerW == outerW) {
+								road_left_edges.push_back(positionStart);
 								continue;
-							}
+							}*/
 							glm::dvec3 innerPos = glm::dvec3(positionStart) + left_direction * innerW;
 							glm::dvec3 outerPos = glm::dvec3(positionStart) + left_direction * outerW;
 							LineSegment lineSegment = LineSegment();
 							int n_points = int((outerW - innerW) / triangulation_step + 1);
 							double t_ds = (outerW - innerW) / n_points;
-							glm::dvec3 t_dir = glm::normalize(outerPos - innerPos);
+							glm::dvec3 t_dir = left_direction;// glm::normalize(outerPos - innerPos);
 
 							if (i == left.lane.size() - 1)
 								road_left_edges.push_back(glm::dvec4(innerPos + t_dir * t_ds * double(n_points + edge_epsilon), 0.0));
@@ -1089,6 +1185,7 @@ private:
 							double innerW, outerW;
 							laneSection.getCurrentRightWidth(s_start, right.lane.at(i).id, innerW, outerW);
 							if (innerW == outerW) {
+								road_right_edges.push_back(positionStart);
 								continue;
 							}
 							glm::dvec3 innerPos = glm::dvec3(positionStart) + right_direction * innerW;
@@ -1096,7 +1193,7 @@ private:
 							LineSegment lineSegment = LineSegment();
 							int n_points = int((outerW - innerW) / triangulation_step + 1);
 							double t_ds = (outerW - innerW) / n_points;
-							glm::dvec3 t_dir = glm::normalize(outerPos - innerPos);
+							glm::dvec3 t_dir = right_direction;// glm::normalize(outerPos - innerPos);
 
 							if (right.lane.size() - 1 == i)
 								road_right_edges.push_back(glm::dvec4(innerPos + t_dir * t_ds * double(n_points + edge_epsilon), 0.0));
@@ -1114,13 +1211,16 @@ private:
 						for (int i = 0; i < left.lane.size(); i++) {
 							double innerW, outerW;
 							laneSection.getCurrentLeftWidth(s_start, left.lane.at(i).id, innerW, outerW);
-							if (innerW == outerW) continue;
+							if (innerW == outerW) {
+								road_left_edges.push_back(positionStart);
+								continue;
+							}
 							glm::dvec3 innerPos = glm::dvec3(positionStart) + left_direction * innerW;
 							glm::dvec3 outerPos = glm::dvec3(positionStart) + left_direction * outerW;
 							LineSegment lineSegment = LineSegment();
 							int n_points = int((outerW - innerW) / triangulation_step + 1);
 							double t_ds = (outerW - innerW) / n_points;
-							glm::dvec3 t_dir = glm::normalize(outerPos - innerPos);
+							glm::dvec3 t_dir = left_direction;// glm::normalize(outerPos - innerPos);
 
 							if (i == left.lane.size() - 1)
 								road_left_edges.push_back(glm::dvec4(innerPos + t_dir * t_ds * double(n_points + edge_epsilon), 0.0));
@@ -1217,13 +1317,14 @@ private:
 public:
 	std::vector <glm::dvec4> reference_line_vertices;
 	std::vector<IndexedVerticesObject*> roadRenderObjects;
+	std::vector<IndexedVerticesObject*> LanesRenderObjects;
 	std::vector<IndexedVerticesObject*> indexedDebug;
 	std::vector<VerticesObject*> debug;
 	OpenDriveDocument(std::string filePath);
 	void generateReferenceLines();
 	static void GenerateRoad(int ii, Road* road, std::vector <glm::dvec4>* reference_line_vertices, std::vector<std::string>* connection_road_ids,
 		std::vector<IndexedVerticesObject*>* roadRenderObjects, std::vector<IndexedVerticesObject*>* indexedDebug = nullptr, 
-		std::vector<VerticesObject*>* debug=nullptr) {
+		std::vector<VerticesObject*>* debug = nullptr) {
 		g_cout_mutex.lock();
 		std::cout << "Starting thread for road id " << road->id << std::endl;
 		g_cout_mutex.unlock();
@@ -1331,12 +1432,39 @@ public:
 		std::cout << "Thread for road id " <<road->id<<" finished in " << duration.count() << "s" << std::endl;
 		g_cout_mutex.unlock();
 	}
+	static void GenerateRoadLanes(int ii, Road* road, std::vector<glm::dvec4>* reference_line_vertices) {
+		g_cout_mutex.lock();
+		std::cout << "Starting thread for road id " << road->id << std::endl;
+		g_cout_mutex.unlock();
+		using clock = std::chrono::system_clock;
+		using sec = std::chrono::duration<double>;
+		auto before = clock::now();
+		road->generateRoadLanes(*reference_line_vertices);
+		auto duration = clock::now() - before;
+		g_cout_mutex.lock();
+		std::cout << "Thread for road id " << road->id << " finished in " << duration.count() << "s" << std::endl;
+		g_cout_mutex.unlock();
+	}
 	void generateRoads() {
 		std::vector<std::thread*> _threads;
 		int i = 0;
 		for (i; i < this->roads.size(); i++) {
 			_threads.push_back(new std::thread(OpenDriveDocument::GenerateRoad, i, 
-				&roads.at(i),&reference_line_vertices,&connection_road_ids,&roadRenderObjects,nullptr,nullptr));
+				&roads.at(i),&reference_line_vertices,&connection_road_ids,&roadRenderObjects,&this->indexedDebug,&this->debug));
+		}
+		for (auto t : _threads) {
+			t->join();
+		}
+		for (auto t : _threads) {
+			delete t;
+		}
+	}
+	void GenerateRoadsLanes() {
+		std::vector<std::thread*> _threads;
+		int i = 0;
+		for (i; i < this->roads.size(); i++) {
+			_threads.push_back(new std::thread(OpenDriveDocument::GenerateRoadLanes, i,
+				&roads.at(i), &reference_line_vertices));
 		}
 		for (auto t : _threads) {
 			t->join();

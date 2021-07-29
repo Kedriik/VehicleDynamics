@@ -171,10 +171,8 @@ void OpenDriveDocument::populateLaneSections(tinyxml2::XMLElement* xml_road, std
 				Lanes::Lane lane;
 				const char* lane_type;
 				xml_lane->QueryStringAttribute("type", &lane_type);
-				if(std::string(lane_type) != "border" && std::string(lane_type) != "none"){
-					this->populateLane(xml_lane, lane);
-					lanes.push_back(lane);
-				}
+				this->populateLane(xml_lane, lane);
+				lanes.push_back(lane);
 				xml_lane = xml_lane->NextSiblingElement("lane");
 			}
 			Lanes::Left left = Lanes::Left(lanes);
@@ -188,10 +186,8 @@ void OpenDriveDocument::populateLaneSections(tinyxml2::XMLElement* xml_road, std
 				Lanes::Lane lane;
 				const char* lane_type;
 				xml_lane->QueryStringAttribute("type", &lane_type);
-				if (std::string(lane_type) != "border" && std::string(lane_type) != "none") {
-					this->populateLane(xml_lane, lane);
-					lanes.push_back(lane);
-				}
+				this->populateLane(xml_lane, lane);
+				lanes.push_back(lane);
 				xml_lane = xml_lane->NextSiblingElement("lane");
 			}
 			Lanes::Right right = Lanes::Right(lanes);
