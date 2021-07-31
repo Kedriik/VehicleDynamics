@@ -161,7 +161,7 @@ glm::mat4 cameraPositionKeyboard(double deltaTime)
 	this->sensTransMultiplier = 1;
 
 	if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
-		this->sensTransMultiplier = 10;
+		this->sensTransMultiplier = 50;
 	if (glfwGetKey( window, GLFW_KEY_Q ) == GLFW_PRESS) 
 		zrot=1;
 	
