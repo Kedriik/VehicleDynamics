@@ -1024,10 +1024,16 @@ private:
 						double t_dir_ds = 1.0;
 						bool finished = false;
 						while (!finished) {
+							if (road_s < laneSection.s) {
+								current_s += step_ds;
+								road_s += step_ds;
+								continue;
+							}
 							if (current_s >= geometry->length) {
 								finished = true;
 								step_ds_epsilon = 0.001;
 								current_s = geometry->length - step_ds_epsilon;
+								road_s = geometry->s + geometry->length - step_ds_epsilon;
 
 							}
 							if (nextLaneSection != nullptr && road_s > nextLaneSection->s) {
@@ -1098,10 +1104,17 @@ private:
 						double t_dir_ds = 1.0;
 						bool finished = false;
 						while (!finished) {
+							if (road_s < laneSection.s) {
+								current_s += step_ds;
+								road_s += step_ds;
+								continue;
+							}
 							if (current_s >= geometry->length) {
 								finished = true;
 								step_ds_epsilon = 0.001;
 								current_s = geometry->length - step_ds_epsilon;
+								current_s = geometry->length - step_ds_epsilon;
+								road_s = geometry->s + geometry->length - step_ds_epsilon;
 
 							}
 							if (nextLaneSection != nullptr && road_s > nextLaneSection->s) {
