@@ -34,7 +34,10 @@ int main(int argc, char** argv)
 	
 	Renderer renderer;
 	renderer.init(1500, 1000);
-
+	std::cout << "Generating Render Objects" << std::endl;
+	using clock = std::chrono::system_clock;
+	using sec = std::chrono::duration<double>;
+	auto before = clock::now();
 	std::vector<VerticesObject*> verticesObjects;
 	std::vector<IndexedVerticesObject*> indexedVerticesObjects;
 	std::vector<glm::dvec4> documentVertices;
@@ -43,10 +46,7 @@ int main(int argc, char** argv)
 		VerticesObject * obj = new VerticesObject(r.getReferencePoints(), GL_LINE_STRIP,glm::vec4(1,0,0,1));
 		obj->generateVBO();
 		verticesObjects.push_back(obj);
-
 		obj = new VerticesObject(r._vertices, GL_POINTS, glm::vec4(0, 1, 0, 1));
-		//obj->generateVBO();
-		//verticesObjects.push_back(obj);
 	}
 	for (auto r : odd.getRoads()) {
 		for (auto l : r.debugLanesRenderObject) {
@@ -63,31 +63,12 @@ int main(int argc, char** argv)
 			indexedVerticesObjects.push_back(edge);
 		}
 	}
-	/*VerticesObject* obj = new VerticesObject(odd.road_vertices, GL_TRIANGLES, glm::dvec4(0, 0.7, 0, 1));
-	obj->generateVBO();
-	///verticesObjects.push_back(obj);
-
-	VerticesObject* robj = new VerticesObject(odd.reference_line_vertices, GL_LINE_STRIP, glm::dvec4(1,0,0,1));
-	robj->generateVBO();
-	//verticesObjects.push_back(robj);
-
-	VerticesObject* reobj = new VerticesObject(odd.road_right_edge, GL_LINE_STRIP, glm::dvec4(1, 1, 0, 1));
-	reobj->generateVBO();
-	//verticesObjects.push_back(reobj);
-
-	VerticesObject* rvobj = new VerticesObject(odd.road_vertices, GL_POINTS, glm::dvec4(238.0 / 255.0, 130.0 / 255.0, 238.0 / 255.0, 1));
-	rvobj->generateVBO();
-	//verticesObjects.push_back(rvobj);
-
-	IndexedVerticesObject* iobj = new IndexedVerticesObject(odd.road_vertices, odd.roadIndexes, GL_TRIANGLES);
-	iobj->generateVBO();
-	indexedVerticesObjects.push_back(iobj);
-	*/
 	for (auto r : odd.getRoads()) {
 		IndexedVerticesObject* idobj = new IndexedVerticesObject(r.debugVertices, r.debugIndexes, GL_LINES, glm::dvec4(238.0 / 255.0, 130.0 / 255.0, 238.0 / 255.0, 1));
 		idobj->generateVBO();
 		indexedVerticesObjects.push_back(idobj);
 	}
+	
 	for (auto ro : odd.roadRenderObjects) {
 		ro->generateVBO();
 		indexedVerticesObjects.push_back(ro);
@@ -101,6 +82,8 @@ int main(int argc, char** argv)
 		v->generateVBO();
 		indexedVerticesObjects.push_back(v);
 	}
+	sec duration = clock::now() - before;
+	std::cout << "Generating finished in " << duration.count() << "s" << std::endl;
 	//idobj->generateVBO();
 	//indexedVerticesObjects.push_back(idobj);
 	double gap = 5.0;

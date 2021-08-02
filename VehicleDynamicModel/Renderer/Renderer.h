@@ -532,7 +532,7 @@ public:
 		camera.setForward(vec3(0, 0, -1));
 		ViewMatrix = camera.cameraPositionKeyboard(0);
 		this->initLoopObjects();
-		
+		glEnable(GL_DEPTH_TEST);
 		GLuint drawMode = GL_FILL;
 		double iddleTime = 0;
 		do
