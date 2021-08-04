@@ -450,8 +450,8 @@ public:
 
 		vec3 camPos = vec3(0, 15.1211f, 0); vec3(51.2, 250, 51.2);
 		camera = Camera(window, width, height, camPos, vec3(0, -1, 0.0), vec3(1, 0, 0), 0.01);
-		camera.setSens(0.01f, 100.1f);
-		camera.setPosition(vec3(-20, 10, 0));
+		camera.setSens(0.01f, 10.1f);
+		camera.setPosition(vec3(-5, 10, 0));
 		camera.setUp(vec3(0, 1, 0));
 		camera.setForward(vec3(1, 0, 0));
 
@@ -524,10 +524,7 @@ public:
 		double loopTotalTime = 0;
 		double deltaTime = 0;
 		double stallTime = 1.0;
-		//camera.setPosition(vec3(0, 0, 200));
-		//camera.setUp(vec3(0, 1, 0));
-		//camera.setForward(vec3(0, 0, -1));
-		camera.setPosition(vec3(0, 0, 200));
+		camera.setPosition(vec3(0, 0, 20));
 		camera.setUp(vec3(0, 1, 0));
 		camera.setForward(vec3(0, 0, -1));
 		ViewMatrix = camera.cameraPositionKeyboard(0);
@@ -544,15 +541,20 @@ public:
 			///////////////
 			this->updateLoopObjects();
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-			glPointSize(2.0f);
+			glPointSize(5.0f);
+			glLineWidth(2.0f);
 			ViewMatrix = camera.cameraPositionKeyboard(deltaTime);
 			GLuint drawMode = GL_LINE;
 			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-			if (glfwGetKey(window, GLFW_KEY_V) == GLFW_PRESS)
+			if (glfwGetKey(window, GLFW_KEY_V) == GLFW_PRESS){
+				glLineWidth(1.0f);
 				glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-			else
+			}
+			else{
 				glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+				glLineWidth(2.5f);
+			}
 			glBindBuffer(GL_SHADER_STORAGE_BUFFER, PerFrameBuffer);
 			perFrameData = (struct perFrameData*) glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, sizeof(struct perFrameData), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
 			perFrameData->ViewMatrix = ViewMatrix;
@@ -563,7 +565,7 @@ public:
 			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 10, DebugBuffer);
 
 			for(int i=0;i<this->verticesObjects.size();i++){
-				glLineWidth(5);
+				//glLineWidth(5);
 				glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, this->verticesObjects.at(i)->getColor());
 				glEnableVertexAttribArray(0);
 				glBindBuffer(GL_ARRAY_BUFFER, this->verticesObjects.at(i)->getVBO());
@@ -580,7 +582,7 @@ public:
 				glDrawArrays(this->verticesObjects.at(i)->getDrawMode(), 0, this->verticesObjects.at(i)->getVertices().size());
 			}
 			if(glfwGetKey(window, GLFW_KEY_G) != GLFW_PRESS){
-				glLineWidth(1);
+				//glLineWidth(1);
 				for (int i = 0; i < this->indexedVerticesObjects.size(); i++) {
 					glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, this->indexedVerticesObjects.at(i)->getColor());
 					glEnableVertexAttribArray(0);
