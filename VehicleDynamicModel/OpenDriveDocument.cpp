@@ -1,6 +1,8 @@
 #include "OpenDriveDocument.h"
 std::mutex OpenDriveDocument::g_cout_mutex;
 std::vector<std::string> OpenDriveDocument::connection_road_ids;
+double Road::S_STEP;
+double Road::T_STEP;
 OpenDriveDocument::OpenDriveDocument(std::string filePath) {
 	std::ifstream myfile;
 	doc.LoadFile(filePath.c_str());

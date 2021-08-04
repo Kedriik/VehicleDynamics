@@ -5,7 +5,6 @@
 #include "OpenDriveDocument.h"
 #include "Renderer/Renderer.h"
 #include <exception>
-
 int main(int argc, char** argv)
 {
 	std::string openDriveFilePath;
@@ -16,8 +15,13 @@ int main(int argc, char** argv)
 		openDriveFilePath = "Ex_Line-Spiral-Arc.xodr";
 	}
 	int generate_gaps = false;
-	if (argc > 2) {
-		generate_gaps = int(argv[2]);
+	if (argc > 3) {
+		Road::S_STEP = std::stod(argv[2]);
+		Road::T_STEP = std::stod(argv[3]);
+	}
+	else {
+		Road::S_STEP = 10.1;
+		Road::T_STEP = 1.1;
 	}
 	OpenDriveDocument odd = OpenDriveDocument(openDriveFilePath);
 	//try {

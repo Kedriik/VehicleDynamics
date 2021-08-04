@@ -927,6 +927,8 @@ public:
 	std::vector<VerticesObject*> debugLanesRenderObject;
 	std::vector<IndexedVerticesObject*> debugEdgeRenderObjects;
 	std::vector<IndexedVerticesObject*> lanesRenderObjects;
+	static double S_STEP;
+	static double T_STEP;
 private:
 	double length;
 	std::string id;
@@ -968,7 +970,7 @@ private:
 	void generateLanesVerticesForGeometry(Lanes::LaneSide* laneSide,
 		LaneSection laneSection, LaneSection* nextLaneSection, 
 		ElevationProfile ep, LateralProfile lp, std::vector<std::string>& connection_road_ids) {
-		double g_step_ds = 10.1;
+		double g_step_ds = S_STEP;
 		double g_step_ds_epsilon = 0.1;
 		double g_t_dir_ds = 1.1;
 		for(int i=0;i<laneSide->lane.size();i++){
