@@ -75,8 +75,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(SolutionDir)boost;$(SolutionDir)VehicleDynamicModel\Renderer\glfw-3.2.1.bin.WIN64\include\GLFW;$(SolutionDir)VehicleDynamicModel\Renderer\LoadShaders\include\GL;$(SolutionDir)VehicleDynamicModel\Renderer\LoadShaders\include\GL3;$(SolutionDir)VehicleDynamicModel\Renderer\LoadShaders;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)VehicleDynamicModel\Renderer\glfw-3.2.1.bin.WIN64\lib-vc2015;$(SolutionDir)VehicleDynamicModel\Renderer\LoadShaders\lib;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir)VehicleDynamicModel;$(SolutionDir)VehicleDynamicModel\Renderer\glfw-3.2.1.bin.WIN64\include\GLFW;$(SolutionDir)VehicleDynamicModel\Renderer\LoadShaders\include\GL;$(SolutionDir)VehicleDynamicModel\Renderer\LoadShaders\include\GL3;$(SolutionDir)VehicleDynamicModel\Renderer\LoadShaders;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)VehicleDynamicModel\boost_libs;$(SolutionDir)VehicleDynamicModel\Renderer\glfw-3.2.1.bin.WIN64\lib-vc2015;$(SolutionDir)VehicleDynamicModel\Renderer\LoadShaders\lib;$(LibraryPath)</LibraryPath>
     <SourcePath>$(SolutionDir)VehicleDynamicModel\Renderer\LoadShaders\lib;$(SourcePath)</SourcePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -170,6 +170,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\tinyxml2\tinyxml2.h" />
+    <ClInclude Include="boost\asio\thread_pool.hpp" />
     <ClInclude Include="CDT\include\CDT.h" />
     <ClInclude Include="CDT\include\CDT.hpp" />
     <ClInclude Include="CDT\include\CDTUtils.h" />

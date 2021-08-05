@@ -7,6 +7,9 @@
 #include <exception>
 int main(int argc, char** argv)
 {
+	using clock = std::chrono::system_clock;
+	using sec = std::chrono::duration<double>;
+	auto before_all = clock::now();
 	std::string openDriveFilePath;
 	if (argc > 1) {
 		openDriveFilePath = std::string(argv[1]);
@@ -39,8 +42,7 @@ int main(int argc, char** argv)
 	Renderer renderer;
 	renderer.init(1500, 1000);
 	std::cout << "Generating Render Objects" << std::endl;
-	using clock = std::chrono::system_clock;
-	using sec = std::chrono::duration<double>;
+
 	auto before = clock::now();
 	std::vector<VerticesObject*> verticesObjects;
 	std::vector<IndexedVerticesObject*> indexedVerticesObjects;
@@ -87,9 +89,9 @@ int main(int argc, char** argv)
 		indexedVerticesObjects.push_back(v);
 	}
 	sec duration = clock::now() - before;
+	sec duration_all = clock::now() - before_all;
 	std::cout << "Generating finished in " << duration.count() << "s" << std::endl;
-	//idobj->generateVBO();
-	//indexedVerticesObjects.push_back(idobj);
+	std::cout << "All finished in " << duration_all.count() << "s" << std::endl;
 	double gap = 5.0;
 	
 	if(generate_gaps){

@@ -17,7 +17,7 @@
 #include <conio.h>
 #include <vector>
 #include <chrono>
-#include "windows.h"
+//#include "windows.h"
 #include "glm\glm\glm.hpp"
 #include "camera.h"
 

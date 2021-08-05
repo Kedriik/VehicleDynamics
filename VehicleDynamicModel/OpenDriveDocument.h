@@ -25,6 +25,7 @@
 #include <thread>
 #include <mutex>
 #include <random>
+
 #define GLM_SWIZZLE
 class OpenDriveMath {
 public:
@@ -1655,6 +1656,7 @@ public:
 		for (auto t : _threads) {
 			delete t;
 		}
+		
 	}
 	void printOpenDriveDocument();
 	std::vector<Road> getRoads();
