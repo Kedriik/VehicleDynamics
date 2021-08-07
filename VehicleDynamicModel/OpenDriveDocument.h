@@ -973,7 +973,7 @@ private:
 		ElevationProfile ep, LateralProfile lp, std::vector<std::string>& connection_road_ids) {
 		double g_step_ds = S_STEP;
 		double g_step_ds_epsilon = 0.1;
-		double g_t_dir_ds = 1.1;
+		double g_t_dir_ds = T_STEP;
 		for(int i=0;i<laneSide->lane.size();i++){
 			Lanes::Lane lane = laneSide->lane.at(i);
 			if ((lane.type == "border" || lane.type == "none") && i == laneSide->lane.size()-1 && !this->isThisConnectionRoad(connection_road_ids)) {
@@ -981,12 +981,13 @@ private:
 			}
 			glm::dvec3 s_direction;
 			for (Geometry* geometry : this->getPlanView().geometries) {
+				g_step_ds = S_STEP;
+				g_t_dir_ds = T_STEP;
 				if (geometry->length <= g_step_ds) {
 					g_step_ds = geometry->length / 2;
 				}
 				std::vector<glm::dvec4> laneVertices;
 				std::vector<glm::dvec4> edgesVertices;
-				//geometry->generateReferenceLine();
 				double road_s = geometry->s;
 				double current_s = 0;
 				double step_ds = g_step_ds;
@@ -1035,13 +1036,6 @@ private:
 						t_direction = superelevation_rotation * glm::normalize(glm::cross(up,s_direction));
 						laneSection.getCurrentLeftWidth(road_s, lane.id, innerW, outerW);
 					}
-					
-					/*if (innerW == outerW && finished) {
-						glm::dvec3 posmax = (outerW) * t_direction + glm::dvec3(position);
-						glm::dvec3 posmin = (innerW) * t_direction + glm::dvec3(position);
-						edgesVertices.push_back(glm::dvec4(posmax, 1.0));
-						edgesVertices.push_back(glm::dvec4(posmin, 1.0));
-					}*/
 					if (innerW == outerW) {
 						current_s += step_ds;
 						road_s += step_ds;
@@ -1050,7 +1044,9 @@ private:
 					double accumulated_width = innerW;
 					double width = (outerW - innerW);
 					glm::dvec3 middle = ((width / 2.0) + innerW) * glm::dvec3(t_direction) + glm::dvec3(position);
-					
+					if (width >= t_dir_ds) {
+						t_dir_ds = width / 2;
+					}
 					while (accumulated_width < outerW) {
 						glm::dvec3 pos = (std::min(accumulated_width, outerW)) * t_direction + glm::dvec3(position);
 						glm::dvec3 middle_dir = glm::normalize(middle - pos);
@@ -1113,7 +1109,7 @@ private:
 		for (int i = 0; i < vertices.size(); i++) {
 			debugVertices.push_back(glm::dvec4(vertices.at(i).x, vertices.at(i).y, vertices.at(i).z, 1));
 		}
-		//debugLanesRenderObject.push_back(new VerticesObject(debugVertices, GL_POINTS, glm::dvec4(0, 1, 0, 1)));
+		//debugLanesRenderObject.push_back(new VerticesObject(debugVertices, GL_POINTS, purple));
 		std::vector<glm::dvec4> debugLanesVertices;
 		for (int i = 0; i < laneEdgeIndexes.size(); i++) {
 			debugLanesVertices.push_back(glm::dvec4(vertices.at(laneEdgeIndexes.at(i)).x, vertices.at(laneEdgeIndexes.at(i)).y,
