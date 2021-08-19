@@ -1,4 +1,6 @@
 #pragma once
+#ifndef OpenDriveDocument_h
+#define OpenDriveDocument_h
 #include "tinyxml2/tinyxml2.h"
 #include <iostream>
 #include <fstream>
@@ -18,9 +20,9 @@
 #include <exception>
 #include "btBulletDynamicsCommon.h"
 #include <array>
-#include "delaunator.h"
 #include "CDT/include/CDT.h"
-#include "Renderer/Renderer.h"
+//#include "Renderer/Simulation.h"
+#include "Definitions.h"
 #include <chrono>
 #include <thread>
 #include <mutex>
@@ -1461,7 +1463,7 @@ public:
 class OpenDriveDocument
 {
 private:
-	std::vector<Road> roads;
+	
 	tinyxml2::XMLDocument doc;
 	static std::mutex g_cout_mutex;
 	Link createLink(tinyxml2::XMLElement* xml_road);
@@ -1492,8 +1494,8 @@ private:
 			xml_junction = xml_junction->NextSiblingElement("junction");
 		}
 	}
-
 public:
+	std::vector<Road> roads;
 	std::vector <glm::dvec4> reference_line_vertices;
 	std::vector<IndexedVerticesObject*> roadRenderObjects;
 	std::vector<IndexedVerticesObject*> LanesRenderObjects;
@@ -1659,5 +1661,5 @@ public:
 	int parseOpenDriveDocument();
 
 };
-
+#endif 
 

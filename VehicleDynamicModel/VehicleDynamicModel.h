@@ -1,3 +1,6 @@
+#pragma once
+#ifndef VehicleDynamicHeader
+#define VehicleDynamicHeader
 #include <iostream>
 #include <chrono>
 #include <thread>     
@@ -16,8 +19,7 @@ class btCollisionShape;
 #include "btBulletCollisionCommon.h"
 #include "LinearMath/btIDebugDraw.h"
 #include "Renderer/DebugDraw.h"
-//#include "OpenDriveDocument.h"
-#include "OpenDriveDocument.h"
+#include "Definitions.h"
 //keep the collision shapes, for deletion/cleanup
 
 class btUtils {
@@ -80,8 +82,7 @@ public:
 	btScalar m_oldPickingDist;
 	bool useMCLPSolver = true;  //true
 
-	btRigidBody* generateRoad(OpenDriveDocument& openDriveDocument) {
-		std::vector<IndexedVerticesObject*> rro = openDriveDocument.roadRenderObjects;
+	btRigidBody* generateRoad(std::vector<IndexedVerticesObject*>& rro) {
 		btTriangleMesh* tMesh = new btTriangleMesh();
 		for (int i = 0; i < rro.size(); i ++)
 		{
@@ -103,7 +104,7 @@ public:
 		tr.setOrigin(btVector3(0, 0, 0));
 		return btUtils::localCreateRigidBody(0, tr, groundShape, m_dynamicsWorld);
 	}
-	void initPhysics(OpenDriveDocument& openDriveDocument)
+	void initPhysics(std::vector<IndexedVerticesObject*>& rro)
 	{
 		/*numTriangles: number of triangles
 		triangleIndexBase : the array of vertex indices that makes up the triangles
@@ -146,7 +147,7 @@ public:
 		//m_guiHelper->createPhysicsDebugDrawer(m_dynamicsWorld);
 
 		//m_dynamicsWorld->setGravity(btVector3(0,0,0));
-		this->generateRoad(openDriveDocument);
+		this->generateRoad(rro);
 		btTransform tr;
 		tr.setIdentity();
 		tr.setOrigin(btVector3(0, 0, 0));
@@ -250,6 +251,8 @@ public:
 		//m_guiHelper->autogenerateGraphicsObjects(m_dynamicsWorld);
 	}
 };
+
+#endif
 
 
 

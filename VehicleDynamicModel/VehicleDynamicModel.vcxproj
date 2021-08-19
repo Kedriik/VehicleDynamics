@@ -161,11 +161,11 @@
   <ItemGroup>
     <ClCompile Include="..\tinyxml2\tinyxml2.cpp" />
     <ClCompile Include="CDT\src\CDT.cpp" />
-    <ClCompile Include="delaunator.cpp" />
+    <ClCompile Include="Definitions.h" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="OpenDriveDocument.cpp" />
     <ClCompile Include="Renderer\LoadShaders\lib\LoadShaders.cpp" />
-    <ClCompile Include="Renderer\Renderer.cpp" />
+    <ClCompile Include="Renderer\Simulation.cpp" />
     <ClCompile Include="VehicleDynamicModel.h" />
   </ItemGroup>
   <ItemGroup>
@@ -178,13 +178,11 @@
     <ClInclude Include="CDT\include\PointRTree.h" />
     <ClInclude Include="CDT\include\predicates.h" />
     <ClInclude Include="CDT\include\remove_at.hpp" />
-    <ClInclude Include="delaunator.h" />
-    <ClInclude Include="earcut.hpp" />
     <ClInclude Include="OpenDriveDocument.h" />
     <ClInclude Include="Renderer\camera.h" />
     <ClInclude Include="Renderer\DebugDraw.h" />
     <ClInclude Include="Renderer\LoadShaders\include\LoadShaders.h" />
-    <ClInclude Include="Renderer\Renderer.h" />
+    <ClInclude Include="Renderer\Simulation.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

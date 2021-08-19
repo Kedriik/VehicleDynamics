@@ -27,17 +27,17 @@
     <ClCompile Include="OpenDriveDocument.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\Renderer.cpp">
+    <ClCompile Include="Renderer\Simulation.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Renderer\LoadShaders\lib\LoadShaders.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="delaunator.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="CDT\src\CDT.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Definitions.h">
+      <Filter>Header Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -47,19 +47,13 @@
     <ClInclude Include="OpenDriveDocument.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\Renderer.h">
+    <ClInclude Include="Renderer\Simulation.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Renderer\LoadShaders\include\LoadShaders.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Renderer\camera.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="earcut.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="delaunator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="CDT\include\CDT.h">
