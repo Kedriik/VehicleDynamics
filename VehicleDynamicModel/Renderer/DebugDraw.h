@@ -24,7 +24,7 @@ public:
 	int debugMode = 0;
 	int width;
 	int height;
-	 GLFWwindow* window;
+	GLFWwindow* window;
 	mat4 ProjectionMatrix;
 	Camera camera;
 	GLuint RenderProgram;
@@ -35,7 +35,7 @@ public:
 	GLuint PerFrameBuffer;
 	GLuint ConstantBuffer;
 	GLuint ColorBuffer;
-	vec4* vbo;
+	dvec4* vbo;
 	GLuint DebugBuffer;
 	struct perFrameData
 	{
@@ -56,53 +56,8 @@ public:
 	~DebugDraw() {
 
 	}
-	int init(int _width, int _height)
+	int init()
 	{
-		width = _width;
-		height = _height;
-		if (!glfwInit())
-		{
-			fprintf(stderr, "Failed to initialize GLFW\n");
-			return -1;
-		}
-		std::cout << "GLFW init completed" << std::endl;
-
-
-
-		glfwWindowHint(GLFW_SAMPLES, 4);
-		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 4);
-		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_COMPAT_PROFILE);
-		//	glfwWindowHint(GL_CONTEXT_FLAGS,GL_CONTEXT_FLAG_DEBUG_BIT);
-
-
-
-		window = glfwCreateWindow(width, height, "Benchmarks", NULL, NULL);
-		glfwMakeContextCurrent(window);
-
-		// Initialize GLEW
-		glewExperimental = true; // Needed for core profile
-		if (glewInit() != GLEW_OK) {
-			fprintf(stderr, "Failed to initialize GLEW\n");
-			return -1;
-		}
-		std::cout << "GLEW init completed" << std::endl;
-		glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
-		ProjectionMatrix = glm::infinitePerspective(45.0f, float(width) / float(height), 0.01f);
-
-
-		vec3 camPos = vec3(0, 15.1211f, 0); vec3(51.2, 250, 51.2);
-		camera = Camera(window, width, height, camPos, vec3(0, -1, 0.0), vec3(1, 0, 0), 0.01);
-		camera.setSens(0.01f, 10.1f);
-		camera.setPosition(vec3(-20, 10, 0));
-		camera.setUp(vec3(0, 1, 0));
-		camera.setForward(vec3(1, 0, 0));
-		//glEnable(GL_DEPTH_TEST);
-		//glDisable(GL_DEPTH_TEST);
-		//glEnable(GL_BLEND);
-		//glBlendFunc(GL_ONE, GL_ONE);
-
 		ShaderInfo  RenderProgramSource[] = {
 			{ GL_VERTEX_SHADER,  "Renderer\\VBOBenchmarkCommons\\Vertex.shader" },
 			{ GL_FRAGMENT_SHADER,"Renderer\\VBOBenchmarkCommons\\Fragment.shader" },
@@ -129,10 +84,10 @@ public:
 
 		glGenBuffers(1, &VBO);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, VBO);
-		glBufferData(GL_SHADER_STORAGE_BUFFER, VBOSize * sizeof(vec4), NULL, GL_DYNAMIC_COPY);
+		glBufferData(GL_SHADER_STORAGE_BUFFER, VBOSize * sizeof(dvec4), NULL, GL_DYNAMIC_COPY);
 
-		glGenFramebuffers(1, &DefaultFrameBuffer);
-		glBindFramebuffer(GL_FRAMEBUFFER, DefaultFrameBuffer);
+		//glGenFramebuffers(1, &DefaultFrameBuffer);
+		//glBindFramebuffer(GL_FRAMEBUFFER, DefaultFrameBuffer);
 
 		glGenBuffers(1, &DebugBuffer);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, DebugBuffer);
@@ -155,51 +110,53 @@ public:
 
 
 	}
-	void prepareFrame() {
-		ViewMatrix = camera.cameraPositionKeyboard(0.001);
-		GLuint drawMode = GL_LINE;
+	void prepareFrame(glm::mat4 ViewMatrix, GLuint Program) {
+		//glm::mat4 _ViewMatrix = glm::mat4(ViewMatrix);
+		//GLuint drawMode = GL_LINE;
+		this->RenderProgram = Program;
 		//glBindFramebuffer(GL_FRAMEBUFFER, DefaultFrameBuffer);
-		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+		//glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 		//glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		//glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		/*
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, PerFrameBuffer);
 		perFrameData = (struct perFrameData*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, sizeof(struct perFrameData), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
-		perFrameData->ViewMatrix = ViewMatrix;
+		perFrameData->ViewMatrix = _ViewMatrix;
 		glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 		glPointSize(2);
 		glUseProgram(RenderProgram);
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, PerFrameBuffer);
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, ConstantBuffer);
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, ColorBuffer);
-		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 10, DebugBuffer);
+		glm::mat4 ModelMatrix = glm::mat4(1.0);
+		glUniformMatrix4fv(glGetUniformLocation(RenderProgram, "ModelMatrix"), 1, GL_FALSE, &ModelMatrix[0][0]);
+		*/
 	}
 	virtual void drawLine(const btVector3& from, const btVector3& to, const btVector3& _color) override {
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, ColorBuffer);
 		glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(struct constantData), NULL, GL_DYNAMIC_COPY);
 		color = (struct color*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, sizeof(struct color), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
-		color->color = vec4(_color.x(), _color.y(), _color.z(), _color.w());
+		color->color = vec4(_color.x(), _color.y(), _color.z(), 1.0);
 		glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+		glm::mat4 ModelMatrix = glm::mat4(1.0);
+		glUniformMatrix4fv(glGetUniformLocation(RenderProgram, "ModelMatrix"), 1, GL_FALSE, &ModelMatrix[0][0]);
 		glBindBuffer(GL_SHADER_STORAGE_BUFFER, VBO);
-		glBufferData(GL_SHADER_STORAGE_BUFFER, VBOSize * sizeof(vec4), NULL, GL_DYNAMIC_COPY);
-		vbo = (vec4*) glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, VBOSize * sizeof(vec4),
+		glBufferData(GL_SHADER_STORAGE_BUFFER, VBOSize * sizeof(dvec4), NULL, GL_DYNAMIC_COPY);
+		vbo = (dvec4*) glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, VBOSize * sizeof(dvec4),
 			GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
-		vbo[0] = vec4(from.x(), from.y(), from.z(), 1.0);
-		vbo[1] = vec4(to.x(), to.y(), to.z(), 1.0);
+		vbo[0] = dvec4(from.x(), from.y(), from.z(), 1.0);
+		vbo[1] = dvec4(to.x(), to.y(), to.z(), 1.0);
 		glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
-
-
-
 		glEnableVertexAttribArray(0);
 		glBindBuffer(GL_ARRAY_BUFFER, VBO);
 		glVertexAttribPointer(
 			0,                  // attribute. No particular reason for 3, but must match the layout in the shader.
 			4,                  // size
-			GL_FLOAT,           // type
+			GL_DOUBLE,           // type
 			GL_FALSE,           // normalized?
 			0,                  // stride
 			(void*)0            // array buffer offset
 		);
-
 
 		glDrawArrays(GL_LINES, 0, VBOSize);
 ;

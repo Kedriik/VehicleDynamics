@@ -63,10 +63,11 @@ public:
 	btConstraintSolver* m_solver;
 	btDefaultCollisionConfiguration* m_collisionConfiguration;
 	btDiscreteDynamicsWorld* m_dynamicsWorld;
+	std::vector<btRigidBody*> wheels;
 	btRigidBody* m_carChassis;
 	btCollisionShape* m_wheelShape;
 	///////////////////////////
-
+	btVector3 chassisDimensions = btVector3(1.5f, 1.0f, 0.5f);
 	float gVehicleSteering = 0.f;
 	float steeringIncrement = 0.04f;
 	float steeringClamp = 0.3f;
@@ -78,6 +79,7 @@ public:
 	int m_savedState;
 	btVector3 m_oldPickingPos;
 	btVector3 m_hitPos;
+	btVector3 initialCarPosition = btVector3(5, -10, 2);
 	//btBvhTriangleMeshShape p;
 	btScalar m_oldPickingDist;
 	bool useMCLPSolver = true;  //true
@@ -95,14 +97,16 @@ public:
 				
 				tMesh->addTriangle(btVector3(t1.x,t1.y,t1.z), btVector3(t2.x,t2.y,t2.z), btVector3(t3.x,t3.y,t3.z));
 			}
-			
 		}
 		btCollisionShape* groundShape = new btBvhTriangleMeshShape(tMesh, true);
 		btDefaultMotionState* groundMotionState = new btDefaultMotionState(btTransform(btQuaternion(0, 0, 0, 1), btVector3(0, -1, 0)));
 		btTransform tr;
 		tr.setIdentity();
 		tr.setOrigin(btVector3(0, 0, 0));
-		return btUtils::localCreateRigidBody(0, tr, groundShape, m_dynamicsWorld);
+		auto localRigidBody = btUtils::localCreateRigidBody(0, tr, groundShape, m_dynamicsWorld);
+		localRigidBody->setRestitution(1.0);
+		//localRigidBody->setGravity(btVector3(10,0,0));
+		return localRigidBody;
 	}
 	void initPhysics(std::vector<IndexedVerticesObject*>& rro)
 	{
@@ -116,13 +120,14 @@ public:
 		//btStridingMeshInterface* roadInterface = new btStridingMeshInterface();
 		//btCollisionShape* road = new btBvhTriangleMeshShape()
 		
-		btCollisionShape* groundShape = new btBoxShape(btVector3(50, 3, 50));
-		this->m_collisionShapes.push_back(groundShape);
+		//btCollisionShape* groundShape = new btBoxShape(btVector3(50, 3, 50));
+		//this->m_collisionShapes.push_back(groundShape);
 		m_collisionConfiguration = new btDefaultCollisionConfiguration();
 		m_dispatcher = new btCollisionDispatcher(m_collisionConfiguration);
 		btVector3 worldMin(-1000, -1000, -1000);
 		btVector3 worldMax(1000, 1000, 1000);
 		m_broadphase = new btAxisSweep3(worldMin, worldMax);
+		
 		if (useMCLPSolver)
 		{
 			btDantzigSolver* mlcp = new btDantzigSolver();
@@ -146,18 +151,19 @@ public:
 		m_dynamicsWorld->getSolverInfo().m_numIterations = 100;
 		//m_guiHelper->createPhysicsDebugDrawer(m_dynamicsWorld);
 
-		//m_dynamicsWorld->setGravity(btVector3(0,0,0));
+		m_dynamicsWorld->setGravity(btVector3(0,0,-9.81));
 		this->generateRoad(rro);
 		btTransform tr;
 		tr.setIdentity();
-		tr.setOrigin(btVector3(0, 0, 0));
+		tr.setOrigin(btVector3(0, 0, 0.3)+ initialCarPosition);
+		//tr.setOrigin(-chassisDimensions);
 
 		//either use heightfield or triangle mesh
 
 		//create ground object
 		//btUtils::localCreateRigidBody(0, tr, groundShape, m_dynamicsWorld)->setRestitution(1.0);
 
-		btCollisionShape* chassisShape = new btBoxShape(btVector3(1.f, 0.5f, 2.f));
+		btCollisionShape* chassisShape = new btBoxShape(chassisDimensions);
 		m_collisionShapes.push_back(chassisShape);
 
 		btCompoundShape* compound = new btCompoundShape();
@@ -165,43 +171,34 @@ public:
 		btTransform localTrans;
 		localTrans.setIdentity();
 		//localTrans effectively shifts the center of mass with respect to the chassis
-		localTrans.setOrigin(btVector3(0, 1, 0));
+		localTrans.setOrigin(btVector3(0, 0, 0));
 
 		compound->addChildShape(localTrans, chassisShape);
-		btCollisionShape* boxShape = new btBoxShape(btVector3(1.0f, 1.0f, 1.0f));
-		btTransform box_tr;
-		box_tr.setIdentity();
-		box_tr.setOrigin(btVector3(0, 200, 10));
-		btRigidBody* box = btUtils::localCreateRigidBody(100, box_tr, boxShape, m_dynamicsWorld);
-		box->getOrientation();
-		box->setRestitution(0.5);
 		{
-			btCollisionShape* suppShape = new btBoxShape(btVector3(0.5f, 0.1f, 0.5f));
+			btCollisionShape* suppShape = new btBoxShape(btVector3(0.5f, 0.5f, 0.1f));
 			btTransform suppLocalTrans;
 			suppLocalTrans.setIdentity();
 			//localTrans effectively shifts the center of mass with respect to the chassis
-			suppLocalTrans.setOrigin(btVector3(0, 1.0, 2.5));
+			suppLocalTrans.setOrigin(btVector3(0.0, 0.0, 0.3));
 			compound->addChildShape(suppLocalTrans, suppShape);
 		}
-
-		const btScalar xOffset = 20;
-		const btScalar zOffset = 0;
-		const btScalar FALLHEIGHT = 15;
-		tr.setOrigin(btVector3(xOffset, FALLHEIGHT, zOffset));
+		
+		
+		//const btScalar xOffset = 20;
+		//const btScalar zOffset = 0;
+		//const btScalar FALLHEIGHT = 10;
+		//tr.setOrigin(btVector3(xOffset, zOffset, FALLHEIGHT));
 		
 		const btScalar chassisMass = 2.0f;
 		const btScalar wheelMass = 1.0f;
-		m_carChassis = btUtils::localCreateRigidBody(chassisMass, tr, compound, m_dynamicsWorld);  //chassisShape);
-		//m_carChassis->setDamping(0.2,0.2);
-
-		//m_wheelShape = new btCylinderShapeX(btVector3(wheelWidth,wheelRadius,wheelRadius));
+		m_carChassis = btUtils::localCreateRigidBody(chassisMass, tr, compound, m_dynamicsWorld);
 		m_wheelShape = new btCylinderShapeX(btVector3(wheelWidth, wheelRadius, wheelRadius));
 
 		btVector3 wheelPos[4] = {
-			btVector3(btScalar(-1.) + xOffset, btScalar(FALLHEIGHT - 0.25), btScalar( 1.25) + zOffset),
-			btVector3(btScalar( 1.) + xOffset, btScalar(FALLHEIGHT - 0.25), btScalar( 1.25) + zOffset),
-			btVector3(btScalar( 1.) + xOffset, btScalar(FALLHEIGHT - 0.25), btScalar(-1.25) + zOffset),
-			btVector3(btScalar(-1.) + xOffset, btScalar(FALLHEIGHT - 0.25), btScalar(-1.25)+zOffset) };
+			btVector3(btScalar( 1.5), btScalar( 1.0), 0)+ initialCarPosition,
+			btVector3(btScalar( 1.5), btScalar(-1.0), 0) + initialCarPosition,
+			btVector3(btScalar(-1.5), btScalar( 1.0), 0) + initialCarPosition,
+			btVector3(btScalar(-1.5), btScalar(-1.0), 0) + initialCarPosition };
 
 		for (int i = 0; i < 4; i++)
 		{
@@ -215,14 +212,17 @@ public:
 			btTransform tr;
 			tr.setIdentity();
 			tr.setOrigin(wheelPos[i]);
+			btQuaternion initialRot = btQuaternion(btVector3(0, 0,1), 1.5708);
+			tr.setRotation(initialRot);
 
 			btRigidBody* pBodyB = btUtils::localCreateRigidBody(wheelMass, tr, m_wheelShape, m_dynamicsWorld);
+			wheels.push_back(pBodyB);
 			pBodyB->setFriction(1110);
 			pBodyB->setActivationState(DISABLE_DEACTIVATION);
 			pBodyB->setRestitution(0.5);
 			// add some data to build constraint frames
-			btVector3 parentAxis(0.f, 1.f, 0.f);
-			btVector3 childAxis(1.f, 0.f, 0.f);
+			btVector3 parentAxis(0.f, 0.f, 1.f);
+			btVector3 childAxis(0.f, 1.f, 0.f);
 			btVector3 anchor = tr.getOrigin();
 			btHinge2Constraint* pHinge2 = new btHinge2Constraint(*pBodyA, *pBodyB, anchor, parentAxis, childAxis);
 			//m_guiHelper->get2dCanvasInterface();
@@ -231,10 +231,12 @@ public:
 			// add constraint to world
 			m_dynamicsWorld->addConstraint(pHinge2, true);
 			// Drive engine.
+			
 			pHinge2->enableMotor(3, true);
 			pHinge2->setMaxMotorForce(3, 1000);
 			pHinge2->setTargetVelocity(3, 0);
-			pHinge2->setTargetVelocity(3, 2);
+//			pHinge2->setTargetVelocity(3, 2);
+			
 			// Steering engine.
 			pHinge2->enableMotor(5, true);
 			pHinge2->setMaxMotorForce(5, 1000);
@@ -246,9 +248,7 @@ public:
 			pHinge2->setDbgDrawSize(btScalar(5.f));
 		}
 
-		//resetForklift();
-
-		//m_guiHelper->autogenerateGraphicsObjects(m_dynamicsWorld);
+		
 	}
 };
 

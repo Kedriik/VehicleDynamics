@@ -13,8 +13,9 @@ layout( std430, binding=10 ) buffer DebugBuffer
 {
  vec4 debug; 
 };
+uniform mat4 ModelMatrix;
 void main()
 {
-	gl_Position = ProjectionMatrix*ViewMatrix*vec4(vertexPosition_modelspace.xyz,1);
+	gl_Position = ProjectionMatrix*ViewMatrix*ModelMatrix*vec4(vertexPosition_modelspace.xyz,1);
 	
 }
