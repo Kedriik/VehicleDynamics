@@ -147,6 +147,7 @@ public:
 		vbo[0] = dvec4(from.x(), from.y(), from.z(), 1.0);
 		vbo[1] = dvec4(to.x(), to.y(), to.z(), 1.0);
 		glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, ColorBuffer);
 		glEnableVertexAttribArray(0);
 		glBindBuffer(GL_ARRAY_BUFFER, VBO);
 		glVertexAttribPointer(

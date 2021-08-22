@@ -195,7 +195,7 @@ public:
 		m_wheelShape = new btCylinderShapeX(btVector3(wheelWidth, wheelRadius, wheelRadius));
 
 		btVector3 wheelPos[4] = {
-			btVector3(btScalar( 1.5), btScalar( 1.0), 0)+ initialCarPosition,
+			btVector3(btScalar( 1.5), btScalar( 1.0), 0) + initialCarPosition,
 			btVector3(btScalar( 1.5), btScalar(-1.0), 0) + initialCarPosition,
 			btVector3(btScalar(-1.5), btScalar( 1.0), 0) + initialCarPosition,
 			btVector3(btScalar(-1.5), btScalar(-1.0), 0) + initialCarPosition };

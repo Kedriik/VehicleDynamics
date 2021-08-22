@@ -23,6 +23,7 @@
 #include "camera.h"
 #include "../Definitions.h"
 #include "../VehicleDynamicModel.h"
+#include "objloader.hpp"
 #include "OpenDriveDocument.h"
 class Simulation
 {
@@ -76,24 +77,17 @@ public:
 		odd.GenerateRoadsLanes();
 		return 0;
 	}
-	IndexedVerticesObject* generateWheel() {
-		std::vector<glm::dvec4> cylinderVertices;
-		std::vector<glm::dvec3> cylinderNormals;
-		std::vector<glm::dvec2> cylinderTexCoords;
-		std::vector<unsigned int> cylinderindices;
-		std::vector<unsigned int> cylinderlinesIndices;
-		ShapesGenerator::generateCylinderShape(cylinderVertices, cylinderNormals, cylinderTexCoords, cylinderindices, cylinderlinesIndices);
-		IndexedVerticesObject* cylinderObj = new IndexedVerticesObject(cylinderVertices, cylinderindices, GL_TRIANGLES, glm::dvec4(1, 1, 0, 1));
-		cylinderObj->generateVBO();
-		return cylinderObj;
+	VerticesObject* generateWheel(glm::vec3 scale) {
+		ModelData wheel = ShapesGenerator::LoadModel("dummyWheel.obj");
+		VerticesObject* wheelObj = new VerticesObject(wheel.vertices, GL_TRIANGLES, glm::dvec4(1, 1, 0, 1));
+		wheelObj->generateVBO();
+		return wheelObj;
 	}
-	IndexedVerticesObject* generateChassis() {
-		std::vector<glm::dvec4> vertices;
-		std::vector<unsigned int> indices;
-		ShapesGenerator::generateCube(vertices, indices);
-		IndexedVerticesObject* cubeObj = new IndexedVerticesObject(vertices, indices, GL_TRIANGLES, glm::dvec4(1, 0, 0, 1));
-		cubeObj->generateVBO();
-		return cubeObj;
+	VerticesObject* generateChassis() {
+		ModelData chassis = ShapesGenerator::LoadModel("dummyChassis.obj");
+		VerticesObject* chassisObj = new VerticesObject(chassis.vertices, GL_TRIANGLES, glm::dvec4(1, 0, 0, 1));
+		chassisObj->generateVBO();
+		return chassisObj;
 	}
 	virtual void initRenderObjects() {
 		using clock = std::chrono::system_clock;
@@ -290,13 +284,14 @@ public:
 		GLuint drawMode = GL_FILL;
 		double iddleTime = 0;
 		bool doPhysics = true;
+		bool doDebugDraw = false;
 		btVehicleDynamics vehicleDynamics;
-		std::vector<IndexedVerticesObject*> wheels;
-		IndexedVerticesObject* chassis = generateChassis();
+		std::vector<VerticesObject*> wheels;
+		VerticesObject* chassis = generateChassis();
 		DebugDraw* dd = new DebugDraw();
 		if (doPhysics) {			
 			for (int i = 0; i < 4; i++) {
-			//	wheels.push_back(generateWheel());
+				wheels.push_back(generateWheel(glm::vec3(vehicleDynamics.wheelWidth, vehicleDynamics.wheelRadius, vehicleDynamics.wheelRadius)));
 			}
 			std::vector<IndexedVerticesObject*> ivos;
 			for (auto road : odd.roads) {
@@ -340,6 +335,12 @@ public:
 				glLineWidth(2.5f);
 			}
 
+			if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
+
+			}
+			if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+
+			}
 			
 			glBindBuffer(GL_SHADER_STORAGE_BUFFER, PerFrameBuffer);
 			perFrameData = (struct perFrameData*) glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, sizeof(struct perFrameData), GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
@@ -352,8 +353,10 @@ public:
 
 			if (doPhysics) {
 				vehicleDynamics.m_dynamicsWorld->stepSimulation(deltaTime);
-				dd->prepareFrame(ViewMatrix, RenderProgram);
-				vehicleDynamics.m_dynamicsWorld->debugDrawWorld();
+				if(doDebugDraw || glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS) {
+					dd->prepareFrame(ViewMatrix, RenderProgram);
+					vehicleDynamics.m_dynamicsWorld->debugDrawWorld();
+				}
 			}
 
 			for(int i=0;i<this->verticesObjects.size();i++){
@@ -395,12 +398,15 @@ public:
 				glDrawArrays(this->indexedVerticesObjects.at(i)->getDrawMode(), 0, this->indexedVerticesObjects.at(i)->getVertices().size());
 			}
 			for (int i = 0; i < wheels.size();i++) {
-				IndexedVerticesObject* wheel = wheels.at(i);
+				VerticesObject* wheel = wheels.at(i);
 				glm::mat4 ModelMatrix;
 				float mat[16];
 				vehicleDynamics.wheels.at(i)->getWorldTransform().getOpenGLMatrix(mat);
 				//vehicleDynamics.wheels.at(i)->get
-				ModelMatrix = glm::make_mat4(mat);
+				//ModelMatrix = glm::make_mat4(mat);
+				//ModelMatrix *= wheels.at(i)->ModelMatrix;
+				ModelMatrix = wheels.at(i)->ModelMatrix ;
+				ModelMatrix *= glm::make_mat4(mat);
 				glUniformMatrix4fv(glGetUniformLocation(RenderProgram, "ModelMatrix"), 1, GL_FALSE, &ModelMatrix[0][0]);
 				glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, wheel->getColor());
 				glEnableVertexAttribArray(0);
@@ -415,16 +421,16 @@ public:
 				);
 
 				//GLuint _vbo = this->verticesObjects.at(i)->getVBO();
-				glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, wheel->IndexBuffer);
-				glDrawElements(wheel->getDrawMode(), wheel->indexes.size(), GL_UNSIGNED_INT, (void*)0);
+				//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, wheel->IndexBuffer);
+				//glDrawElements(wheel->getDrawMode(), wheel->indexes.size(), GL_UNSIGNED_INT, (void*)0);
+				glDrawArrays(wheel->getDrawMode(), 0, wheel->vertices.size());
 
 			}
 			glm::mat4 ModelMatrix = glm::mat4(1.0);
 			float matChassis[16];
-			//vehicleDynamics.m_carChassis->getWorldTransform().getOpenGLMatrix(matChassis);
+			vehicleDynamics.m_carChassis->getWorldTransform().getOpenGLMatrix(matChassis);
 			//vehicleDynamics.wheels.at(i)->get
 			ModelMatrix = glm::make_mat4(matChassis);
-			ModelMatrix *= chassis->ModelMatrix;
 			glUniformMatrix4fv(glGetUniformLocation(RenderProgram, "ModelMatrix"), 1, GL_FALSE, &ModelMatrix[0][0]);
 			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, chassis->getColor());
 			glEnableVertexAttribArray(0);
@@ -439,8 +445,9 @@ public:
 			);
 
 			//GLuint _vbo = this->verticesObjects.at(i)->getVBO();
-			glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, chassis->IndexBuffer);
+			//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, chassis->IndexBuffer);
 			//glDrawElements(chassis->getDrawMode(), chassis->indexes.size(), GL_UNSIGNED_INT, (void*)0);
+			glDrawArrays(chassis->getDrawMode(), 0, chassis->vertices.size());
 
 
 			///////////////

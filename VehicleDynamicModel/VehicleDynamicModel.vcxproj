@@ -163,6 +163,7 @@
     <ClCompile Include="CDT\src\CDT.cpp" />
     <ClCompile Include="Definitions.h" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="objloader.cpp" />
     <ClCompile Include="OpenDriveDocument.cpp" />
     <ClCompile Include="Renderer\LoadShaders\lib\LoadShaders.cpp" />
     <ClCompile Include="Renderer\Simulation.cpp" />
@@ -178,6 +179,7 @@
     <ClInclude Include="CDT\include\PointRTree.h" />
     <ClInclude Include="CDT\include\predicates.h" />
     <ClInclude Include="CDT\include\remove_at.hpp" />
+    <ClInclude Include="objloader.hpp" />
     <ClInclude Include="OpenDriveDocument.h" />
     <ClInclude Include="Renderer\camera.h" />
     <ClInclude Include="Renderer\DebugDraw.h" />

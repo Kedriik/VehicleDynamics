@@ -18,8 +18,21 @@
 #include <conio.h>
 #include <vector>
 #include <chrono>
+#include "objloader.hpp"
 //#include "windows.h"
 #include "..\VehicleDynamicModel\Renderer\glm\glm\glm.hpp"
+struct ModelData
+{
+	GLuint ModelVertexBuffer;
+	GLuint ModelUVBuffer;
+	GLuint ModelNormalBuffer;
+
+	std::vector<glm::dvec4> vertices;
+	std::vector<glm::vec2> uvs;
+	std::vector<glm::dvec3> normals;
+
+	int size;
+};
 class ShapesGenerator {
 public:
 	static void generateSphereShape(
@@ -316,6 +329,40 @@ public:
 			_indices.push_back(indices[i]);
 		}
 	}
+
+	static ModelData LoadModel(std::string pathModelPath)
+	{
+		std::vector<glm::dvec4> vertices;
+		std::vector<glm::vec2> uvs;
+		std::vector<glm::dvec3> normals;
+		loadOBJ(pathModelPath.c_str(), vertices, uvs, normals);
+
+		GLuint ModelVertexBuffer;
+		GLuint ModelUVBuffer;
+		GLuint ModelNormalBuffer;
+
+		glGenBuffers(1, &ModelVertexBuffer);
+		glBindBuffer(GL_ARRAY_BUFFER, ModelVertexBuffer);
+		glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), vertices.data(), GL_STATIC_DRAW);
+
+		glGenBuffers(1, &ModelUVBuffer);
+		glBindBuffer(GL_ARRAY_BUFFER, ModelUVBuffer);
+		glBufferData(GL_ARRAY_BUFFER, uvs.size() * sizeof(glm::vec2), uvs.data(), GL_STATIC_DRAW);
+
+		glGenBuffers(1, &ModelNormalBuffer);
+		glBindBuffer(GL_ARRAY_BUFFER, ModelNormalBuffer);
+		glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3), normals.data(), GL_STATIC_DRAW);
+
+		ModelData data = ModelData();
+		data.ModelNormalBuffer = ModelNormalBuffer;
+		data.ModelUVBuffer = ModelUVBuffer;
+		data.ModelVertexBuffer = ModelVertexBuffer;
+		data.vertices = vertices;
+		data.normals = normals;
+		data.uvs = uvs;
+		data.size = vertices.size();
+		return data;
+	}
 };
 class VerticesObject {
 public:
@@ -444,4 +491,5 @@ public:
 		glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);*/
 	}
 };
+
 #endif
