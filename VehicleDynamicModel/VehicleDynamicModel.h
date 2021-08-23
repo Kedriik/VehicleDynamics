@@ -83,6 +83,7 @@ public:
 	//btBvhTriangleMeshShape p;
 	btScalar m_oldPickingDist;
 	bool useMCLPSolver = true;  //true
+	std::vector<btHinge2Constraint*> wheelsHinges;
 
 	btRigidBody* generateRoad(std::vector<IndexedVerticesObject*>& rro) {
 		btTriangleMesh* tMesh = new btTriangleMesh();
@@ -225,6 +226,7 @@ public:
 			btVector3 childAxis(0.f, 1.f, 0.f);
 			btVector3 anchor = tr.getOrigin();
 			btHinge2Constraint* pHinge2 = new btHinge2Constraint(*pBodyA, *pBodyB, anchor, parentAxis, childAxis);
+			wheelsHinges.push_back(pHinge2);
 			//m_guiHelper->get2dCanvasInterface();
 			//pHinge2->setLowerLimit(-SIMD_HALF_PI * 0.5f);
 			//pHinge2->setUpperLimit(SIMD_HALF_PI * 0.5f);
@@ -232,9 +234,9 @@ public:
 			m_dynamicsWorld->addConstraint(pHinge2, true);
 			// Drive engine.
 			
-			pHinge2->enableMotor(3, true);
-			pHinge2->setMaxMotorForce(3, 1000);
-			pHinge2->setTargetVelocity(3, 0);
+			//pHinge2->enableMotor(3, true);
+			//pHinge2->setMaxMotorForce(3, 1000);
+			//pHinge2->setTargetVelocity(3, 0);
 //			pHinge2->setTargetVelocity(3, 2);
 			
 			// Steering engine.
@@ -250,6 +252,78 @@ public:
 
 		
 	}
+};
+
+/*
+Bullet Continuous Collision Detection and Physics Library
+Copyright (c) 2003-2006 Erwin Coumans  http://continuousphysics.com/Bullet/
+
+This software is provided 'as-is', without any express or implied warranty.
+In no event will the authors be held liable for any damages arising from the use of this software.
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute it freely,
+subject to the following restrictions:
+
+1. The origin of this software must not be misrepresented; you must not claim that you wrote the original software. If you use this software in a product, an acknowledgment in the product documentation would be appreciated but is not required.
+2. Altered source versions must be plainly marked as such, and must not be misrepresented as being the original software.
+3. This notice may not be removed or altered from any source distribution.
+*/
+
+class CarHandlingDemo
+{
+public:
+
+	CarHandlingDemo() {};
+
+	void initPhysics(std::vector<IndexedVerticesObject*>& rro);
+
+	void exitPhysics();
+
+	virtual ~CarHandlingDemo();
+
+	virtual void stepSimulation(float deltaTime);
+
+	virtual bool mouseMoveCallback(float x, float y)
+	{
+		return false;
+	}
+
+	virtual bool mouseButtonCallback(int button, int state, float x, float y)
+	{
+		return false;
+	}
+
+	virtual bool keyboardCallback(GLFWwindow* window);
+
+	virtual void physicsDebugDraw(int debugFlags);
+
+	virtual void resetCamera()
+	{
+		float dist = 5 * 8;
+		float pitch = -45;
+		float yaw = 32;
+		float targetPos[3] = { -0.33, -0.72, 4.5 };
+		//guiHelper->resetCamera(dist, pitch, yaw, targetPos[0], targetPos[1], targetPos[2]);
+	}
+
+public:
+	btRigidBody* generateRoad(std::vector<IndexedVerticesObject*>& rro);
+	btDiscreteDynamicsWorld* dynamicsWorld;
+
+	btRaycastVehicle* vehicle;
+
+	btAlignedObjectArray<btCollisionShape*> collisionShapes;
+
+	btRigidBody* createGroundRigidBodyFromShape(btCollisionShape* groundShape);
+
+	btRigidBody* createChassisRigidBodyFromShape(btCollisionShape* chassisShape);
+	btTransform initialTransform;
+	btRigidBody* chassisRigidBody;
+	btVector3 chassisDimensions = btVector3(1.5f, 1.0f, 0.7f);
+	void addWheels(
+		btVector3* halfExtents,
+		btRaycastVehicle* vehicle,
+		btRaycastVehicle::btVehicleTuning tuning);
 };
 
 #endif

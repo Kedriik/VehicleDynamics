@@ -167,6 +167,7 @@
     <ClCompile Include="OpenDriveDocument.cpp" />
     <ClCompile Include="Renderer\LoadShaders\lib\LoadShaders.cpp" />
     <ClCompile Include="Renderer\Simulation.cpp" />
+    <ClCompile Include="VehicleDynamicModel.cpp" />
     <ClCompile Include="VehicleDynamicModel.h" />
   </ItemGroup>
   <ItemGroup>

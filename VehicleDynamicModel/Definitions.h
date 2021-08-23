@@ -33,6 +33,10 @@ struct ModelData
 
 	int size;
 };
+struct ModelTransformation {
+	glm::dvec3 rotation;
+	glm::dvec3 position;
+};
 class ShapesGenerator {
 public:
 	static void generateSphereShape(
@@ -329,7 +333,6 @@ public:
 			_indices.push_back(indices[i]);
 		}
 	}
-
 	static ModelData LoadModel(std::string pathModelPath)
 	{
 		std::vector<glm::dvec4> vertices;
@@ -364,7 +367,7 @@ public:
 		return data;
 	}
 };
-class VerticesObject {
+class VerticesObject:ModelTransformation {
 public:
 	std::vector<glm::dvec4> vertices;
 	glm::mat4 ModelMatrix;
@@ -407,7 +410,7 @@ public:
 		return this->drawMode;
 	}
 };
-class IndexedVerticesObject {
+class IndexedVerticesObject:ModelTransformation {
 public:
 	std::vector<glm::dvec4> vertices;
 	std::vector<unsigned int> indexes;
