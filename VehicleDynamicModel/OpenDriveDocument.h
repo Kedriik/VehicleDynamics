@@ -1111,7 +1111,7 @@ private:
 		for (int i = 0; i < vertices.size(); i++) {
 			debugVertices.push_back(glm::dvec4(vertices.at(i).x, vertices.at(i).y, vertices.at(i).z, 1));
 		}
-		//debugLanesRenderObject.push_back(new VerticesObject(debugVertices, GL_POINTS, purple));
+		debugLanesRenderObject.push_back(new VerticesObject(debugVertices, GL_POINTS, purple));
 		std::vector<glm::dvec4> debugLanesVertices;
 		for (int i = 0; i < laneEdgeIndexes.size(); i++) {
 			debugLanesVertices.push_back(glm::dvec4(vertices.at(laneEdgeIndexes.at(i)).x, vertices.at(laneEdgeIndexes.at(i)).y,
@@ -1171,8 +1171,8 @@ private:
 				this->lanesRenderObjects.push_back(ivobj);
 			}
 		}
-		//IndexedVerticesObject* iobj = new IndexedVerticesObject(edgesVertices, laneEdgeIndexes, GL_LINES);
-		//this->debugEdgeRenderObjects.push_back(iobj);
+		IndexedVerticesObject* iobj = new IndexedVerticesObject(edgesVertices, laneEdgeIndexes, GL_LINES);
+		this->debugEdgeRenderObjects.push_back(iobj);
 		
 	}
 	void generateRoadLanes(std::vector<glm::dvec4>& reference_line_vertices,
