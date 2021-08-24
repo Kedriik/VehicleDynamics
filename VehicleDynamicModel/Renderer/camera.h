@@ -8,7 +8,7 @@ class Camera
 {
 GLFWwindow *window;
 
-private:
+public:
 	glm::vec3 forward, up, right, Position;
 	quat camQuat;
 	float sensRot, sensTrans;

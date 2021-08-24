@@ -306,6 +306,7 @@ public:
 			double dot = normalized.x * OX.x + normalized.y * OX.y;
 			double det = normalized.x * OX.y - normalized.y * OX.x;
 			double initialAngle = atan2(det, dot);
+
 			vehicleDynamics.initialTransform.setRotation(btQuaternion(btVector3(0,0,-1), initialAngle)* btQuaternion(btVector3(1, 0, 0), 1.57));
 			vehicleDynamics.initialTransform.setOrigin(btVector3(start_pos.x, start_pos.y, 10));
 			vehicleDynamics.initPhysics(ivos);
@@ -320,9 +321,7 @@ public:
 			dd->init();
 			vehicleDynamics.dynamicsWorld->setDebugDrawer(dd);
 			vehicleDynamics.dynamicsWorld->getDebugDrawer()->setDebugMode(btIDebugDraw::DBG_DrawWireframe);
-			
-			//vehicleDynamics.wheelsHinges.at(0)->enableMotor(3, true);
-			//vehicleDynamics.wheelsHinges.at(1)->enableMotor(3, true);
+		
 		}
 		do
 		{
@@ -331,13 +330,38 @@ public:
 			deltaTime = double(currentTime - lastTime);
 			loopTotalTime += deltaTime;
 			///////////////
-			
+			if (doPhysics) {
+				vehicleDynamics.keyboardCallback(window);
+				vehicleDynamics.dynamicsWorld->stepSimulation(deltaTime);
+				if (doDebugDraw || glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS) {
+					dd->prepareFrame(ViewMatrix, RenderProgram);
+					vehicleDynamics.dynamicsWorld->debugDrawWorld();
+				}
+			}
 			//////////////
 			this->updateLoopObjects();
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			glPointSize(5.0f);
 			glLineWidth(2.0f);
-			ViewMatrix = camera.cameraPositionKeyboard(deltaTime);
+			if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) {
+				
+				float matChassis[16];
+				vehicleDynamics.chassisRigidBody->getWorldTransform().getOpenGLMatrix(matChassis);
+				btVector3 pos = vehicleDynamics.chassisRigidBody->getCenterOfMassPosition();
+				glm::vec3 forward = glm::normalize(glm::vec3(glm::vec4(0, 0, -1, 0) * glm::make_mat4(matChassis)));
+				glm::vec3 up = glm::normalize(glm::vec3(glm::vec4(1, 0, 0, 0) * glm::make_mat4(matChassis)));
+				
+				glm::vec3 Position = glm::vec3(pos.x(), pos.y(), pos.z());
+				ViewMatrix = glm::lookAt
+				(
+					Position,					// Camera is here
+					Position + forward,		// and looks here : at the same position, plus "direction"
+					glm::vec3(0,0,1)							// Head is up (set to 0,-1,0 to look upside-down)
+				);
+			}
+			else{
+				ViewMatrix = camera.cameraPositionKeyboard(deltaTime);
+			}
 
 			GLuint drawMode = GL_LINE;
 			glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
@@ -353,15 +377,6 @@ public:
 			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, PerFrameBuffer);
 			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, ConstantBuffer);
 			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 10, DebugBuffer);
-
-			if (doPhysics) {
-				vehicleDynamics.keyboardCallback(window);
-				vehicleDynamics.dynamicsWorld->stepSimulation(deltaTime);
-				if(doDebugDraw || glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS) {
-					dd->prepareFrame(ViewMatrix, RenderProgram);
-					vehicleDynamics.dynamicsWorld->debugDrawWorld();
-				}
-			}
 
 			for(int i=0;i<this->verticesObjects.size();i++){
 				glUniformMatrix4fv(glGetUniformLocation(RenderProgram, "ModelMatrix"), 1, GL_FALSE, &this->verticesObjects.at(i)->ModelMatrix[0][0]);
@@ -380,7 +395,6 @@ public:
 				//GLuint _vbo = this->verticesObjects.at(i)->getVBO();
 				glDrawArrays(this->verticesObjects.at(i)->getDrawMode(), 0, this->verticesObjects.at(i)->getVertices().size());
 			}
-
 
 			for (int i = 0; i < this->indexedVerticesObjects.size(); i++) {
 				glUniformMatrix4fv(glGetUniformLocation(RenderProgram, "ModelMatrix"), 1, GL_FALSE, &this->indexedVerticesObjects.at(i)->ModelMatrix[0][0]);
@@ -436,7 +450,6 @@ public:
 			glm::mat4 ModelMatrix = glm::mat4(1.0);
 			float matChassis[16];
 			vehicleDynamics.chassisRigidBody->getWorldTransform().getOpenGLMatrix(matChassis);
-			//vehicleDynamics.wheels.at(i)->get
 			ModelMatrix = glm::make_mat4(matChassis);
 			glUniformMatrix4fv(glGetUniformLocation(RenderProgram, "ModelMatrix"), 1, GL_FALSE, &ModelMatrix[0][0]);
 			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, chassis->getColor());
