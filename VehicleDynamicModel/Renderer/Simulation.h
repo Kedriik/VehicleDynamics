@@ -348,14 +348,15 @@ public:
 				float matChassis[16];
 				vehicleDynamics.chassisRigidBody->getWorldTransform().getOpenGLMatrix(matChassis);
 				btVector3 pos = vehicleDynamics.chassisRigidBody->getCenterOfMassPosition();
-				glm::vec3 forward = glm::normalize(glm::vec3(glm::vec4(0, 0, -1, 0) * glm::make_mat4(matChassis)));
-				glm::vec3 up = glm::normalize(glm::vec3(glm::vec4(1, 0, 0, 0) * glm::make_mat4(matChassis)));
+				glm::vec3 forward = glm::normalize(glm::vec3( glm::make_mat4(matChassis)* glm::vec4(0, 0, 1, 0)));
+				glm::vec3 up = glm::normalize(glm::vec3(glm::make_mat4(matChassis)* glm::vec4(0, 1, 0, 0)));
 				
-				glm::vec3 Position = glm::vec3(pos.x(), pos.y(), pos.z());
+				glm::vec3 CamPosition = glm::vec3(pos.x(), pos.y(), pos.z()) + 3.0f * up - 8.0f * forward;
+				glm::vec3 CarPosition = glm::vec3(pos.x(), pos.y(), pos.z()) + 3.0f * up;
 				ViewMatrix = glm::lookAt
 				(
-					Position,					// Camera is here
-					Position + forward,		// and looks here : at the same position, plus "direction"
+					CamPosition,					// Camera is here
+					CarPosition,		// and looks here : at the same position, plus "direction"
 					glm::vec3(0,0,1)							// Head is up (set to 0,-1,0 to look upside-down)
 				);
 			}
