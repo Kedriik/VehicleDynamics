@@ -326,6 +326,64 @@ public:
 		btRaycastVehicle::btVehicleTuning tuning);
 };
 
+
+class CarHandling
+{
+public:
+
+	CarHandling() {};
+
+	void initPhysics(std::vector<IndexedVerticesObject*>& rro);
+
+	void exitPhysics();
+
+	virtual ~CarHandling();
+
+	virtual void stepSimulation(float deltaTime);
+
+	virtual bool mouseMoveCallback(float x, float y)
+	{
+		return false;
+	}
+
+	virtual bool mouseButtonCallback(int button, int state, float x, float y)
+	{
+		return false;
+	}
+
+	virtual bool keyboardCallback(GLFWwindow* window);
+
+	virtual void physicsDebugDraw(int debugFlags);
+
+	virtual void resetCamera()
+	{
+		float dist = 5 * 8;
+		float pitch = -45;
+		float yaw = 32;
+		float targetPos[3] = { -0.33, -0.72, 4.5 };
+		//guiHelper->resetCamera(dist, pitch, yaw, targetPos[0], targetPos[1], targetPos[2]);
+	}
+
+public:
+	btRigidBody* generateRoad(std::vector<IndexedVerticesObject*>& rro);
+	btDiscreteDynamicsWorld* dynamicsWorld;
+
+	btRaycastVehicle* vehicle;
+
+	btAlignedObjectArray<btCollisionShape*> collisionShapes;
+
+	btRigidBody* createGroundRigidBodyFromShape(btCollisionShape* groundShape);
+
+	btRigidBody* createChassisRigidBodyFromShape(btCollisionShape* chassisShape);
+	btTransform initialTransform;
+	btRigidBody* chassisRigidBody;
+	btVector3 chassisDimensions = btVector3(1.5f, 1.0f, 0.7f);
+	void addWheels(
+		btVector3* halfExtents,
+		btRaycastVehicle* vehicle,
+		btRaycastVehicle::btVehicleTuning tuning);
+};
+
 #endif
 
 

@@ -507,7 +507,6 @@ public:
 
 		}
 	}
-
 	glm::dvec4 generatePosition(double s) {
 		//if (s > this->length) s = this->length;
 		double  a = 0;

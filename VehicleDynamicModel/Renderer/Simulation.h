@@ -285,7 +285,7 @@ public:
 		double iddleTime = 0;
 		bool doPhysics = true;
 		bool doDebugDraw = false;
-		CarHandlingDemo vehicleDynamics;
+		CarHandling vehicleDynamics;
 		std::vector<VerticesObject*> wheels;
 		VerticesObject* chassis = generateChassis();
 		DebugDraw* dd = new DebugDraw();
@@ -330,6 +330,7 @@ public:
 			deltaTime = double(currentTime - lastTime);
 			loopTotalTime += deltaTime;
 			///////////////
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			if (doPhysics) {
 				vehicleDynamics.keyboardCallback(window);
 				vehicleDynamics.dynamicsWorld->stepSimulation(deltaTime);
@@ -340,7 +341,6 @@ public:
 			}
 			//////////////
 			this->updateLoopObjects();
-			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			glPointSize(5.0f);
 			glLineWidth(2.0f);
 			if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS) {
