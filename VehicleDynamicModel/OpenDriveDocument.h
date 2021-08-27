@@ -918,8 +918,6 @@ struct LineSegment {
 	LineSegment(std::vector<glm::dvec4> _vertices, int _t_section_n_points = 10) :t_section_n_points(_t_section_n_points),
 		vertices(_vertices) {}
 };
-
-
 class Road {
 	friend class OpenDriveDocument;
 public:
@@ -931,6 +929,7 @@ public:
 	std::vector<IndexedVerticesObject*> lanesRenderObjects;
 	static double S_STEP;
 	static double T_STEP;
+	static bool debugRender;
 private:
 	double length;
 	std::string id;
@@ -961,7 +960,7 @@ private:
 		static std::uniform_real_distribution<> dis(0, 1); // rage 0 - 1
 		return dis(e);
 	}
-	 bool isThisConnectionRoad(std::vector<std::string>& connection_road_ids){
+	bool isThisConnectionRoad(std::vector<std::string>& connection_road_ids){
 		for (auto connection_id : connection_road_ids) {
 			if (connection_id == this->id) {
 				return true;
@@ -1022,7 +1021,7 @@ private:
 					position.w = superelevation.a + superelevation.b * ds_start + superelevation.c * std::pow(ds_start, 2) + superelevation.d * std::pow(ds_start, 3);
 					ds_start = (road_s + step_ds_epsilon) - elevation_ds.s;
 					position_ds.z = elevation_ds.a + elevation_ds.b * ds_start + elevation_ds.c * std::pow(ds_start, 2) + elevation_ds.d * std::pow(ds_start, 3);
-					ds_start = (road_s + step_ds_epsilon) - elevation_ds.s;
+					ds_start = (road_s + step_ds_epsilon) - superelevation_ds.s;
 					position_ds.w = superelevation_ds.a + superelevation_ds.b * ds_start + superelevation_ds.c * std::pow(ds_start, 2) + superelevation_ds.d * std::pow(ds_start, 3);
 					glm::dvec3 up = glm::dvec3(0, 0, 1);
 					s_direction = glm::dvec3(glm::normalize(position_ds - position));
@@ -1110,13 +1109,15 @@ private:
 		for (int i = 0; i < vertices.size(); i++) {
 			debugVertices.push_back(glm::dvec4(vertices.at(i).x, vertices.at(i).y, vertices.at(i).z, 1));
 		}
-		//debugLanesRenderObject.push_back(new VerticesObject(debugVertices, GL_POINTS, purple));
+		//if(debugRender)
+			//debugLanesRenderObject.push_back(new VerticesObject(debugVertices, GL_POINTS, purple));
 		std::vector<glm::dvec4> debugLanesVertices;
 		for (int i = 0; i < laneEdgeIndexes.size(); i++) {
 			debugLanesVertices.push_back(glm::dvec4(vertices.at(laneEdgeIndexes.at(i)).x, vertices.at(laneEdgeIndexes.at(i)).y,
 				vertices.at(laneEdgeIndexes.at(i)).z, 1.0));
 		}
-		//debugLanesRenderObject.push_back(new VerticesObject(debugLanesVertices, GL_LINES, glm::dvec4(0, 1, 0, 1)));
+		if (debugRender)
+			debugLanesRenderObject.push_back(new VerticesObject(debugLanesVertices, GL_LINES, glm::dvec4(0, 1, 0, 1)));
 		bool triangulate = true;
 		if(triangulate){
 			using Triangulation = CDT::Triangulation<double>;
@@ -1170,8 +1171,10 @@ private:
 				this->lanesRenderObjects.push_back(ivobj);
 			}
 		}
-		//IndexedVerticesObject* iobj = new IndexedVerticesObject(edgesVertices, laneEdgeIndexes, GL_LINES);
-		//this->debugEdgeRenderObjects.push_back(iobj);
+		if (debugRender){
+			IndexedVerticesObject* iobj = new IndexedVerticesObject(edgesVertices, laneEdgeIndexes, GL_LINES);
+			this->debugEdgeRenderObjects.push_back(iobj);
+		}
 		
 	}
 	void generateRoadLanes(std::vector<glm::dvec4>& reference_line_vertices,
@@ -1265,10 +1268,6 @@ private:
 						for (int i = 0; i < right.lane.size(); i++) {
 							double innerW, outerW;
 							laneSection.getCurrentRightWidth(s_start, right.lane.at(i).id, innerW, outerW);
-							/*if (innerW == outerW) {
-								//road_right_edges.push_back(positionStart); 
-								continue;
-								}*/
 							glm::dvec3 innerPos = glm::dvec3(positionStart) + right_direction * innerW;
 							glm::dvec3 outerPos = glm::dvec3(positionStart) + right_direction * outerW;
 							LineSegment lineSegment = LineSegment();
@@ -1292,10 +1291,6 @@ private:
 						for (int i = 0; i < left.lane.size(); i++) {
 							double innerW, outerW;
 							laneSection.getCurrentLeftWidth(s_start, left.lane.at(i).id, innerW, outerW);
-							/*if (innerW == outerW) {
-								road_left_edges.push_back(positionStart);
-								continue;
-							}*/
 							glm::dvec3 innerPos = glm::dvec3(positionStart) + left_direction * innerW;
 							glm::dvec3 outerPos = glm::dvec3(positionStart) + left_direction * outerW;
 							LineSegment lineSegment = LineSegment();

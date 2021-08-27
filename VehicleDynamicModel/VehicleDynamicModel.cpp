@@ -332,7 +332,6 @@ bool CarHandlingDemo::keyboardCallback(GLFWwindow* window)
 
 	return handled;
 }
-
 void CarHandling::initPhysics(std::vector<IndexedVerticesObject*>& rro)
 {
 	//Collision configuration contains default setup for memory, collision setup. Advanced users can create their own configuration.
@@ -491,7 +490,7 @@ btRigidBody* CarHandling::generateRoad(std::vector<IndexedVerticesObject*>& rro)
 	tr.setIdentity();
 	tr.setOrigin(btVector3(0, 0, 0));
 	auto localRigidBody = btUtils::localCreateRigidBody(0, tr, groundShape, this->dynamicsWorld);
-	localRigidBody->setRestitution(1.0);
+	//localRigidBody->setRestitution(1.0);
 	//localRigidBody->setGravity(btVector3(10,0,0));
 	return localRigidBody;
 }
@@ -504,19 +503,19 @@ void CarHandling::addWheels(
 	btVector3 wheelDirectionCS0(0, -1, 0);
 
 	//The axis which the wheel rotates arround
-	btVector3 wheelAxleCS(-1, 0, 0);
+	btVector3 wheelAxleCS(1, 0, 0);
 
-	btScalar suspensionRestLength(0.7);
+	btScalar suspensionRestLength(0.3);
 
 	btScalar wheelWidth(0.4);
 
 	btScalar wheelRadius(0.5);
 
 	//The height where the wheels are connected to the chassis
-	btScalar connectionHeight(1.2);
+	btScalar connectionHeight(0.5);
 
 	//All the wheel configuration assumes the vehicle is centered at the origin and a right handed coordinate system is used
-	btVector3 wheelConnectionPoint(2.0f*halfExtents->x() - wheelRadius, connectionHeight, halfExtents->z() - wheelWidth);
+	btVector3 wheelConnectionPoint(2*halfExtents->x() - wheelRadius, connectionHeight, halfExtents->z() - wheelWidth);
 
 	//Adds the front wheels
 	vehicle->addWheel(wheelConnectionPoint, wheelDirectionCS0, wheelAxleCS, suspensionRestLength, wheelRadius, tuning, true);
@@ -533,11 +532,11 @@ void CarHandling::addWheels(
 	for (int i = 0; i < vehicle->getNumWheels(); i++)
 	{
 		btWheelInfo& wheel = vehicle->getWheelInfo(i);
-		wheel.m_suspensionStiffness = 50;
+		wheel.m_suspensionStiffness = 100;
 		wheel.m_wheelsDampingCompression = btScalar(0.3) * 2 * btSqrt(wheel.m_suspensionStiffness);//btScalar(0.8);
 		wheel.m_wheelsDampingRelaxation = btScalar(0.5) * 2 * btSqrt(wheel.m_suspensionStiffness);//1;
 		//Larger friction slips will result in better handling
-		wheel.m_frictionSlip = btScalar(1.2);
+		wheel.m_frictionSlip = btScalar(2.2);
 		wheel.m_rollInfluence = 1;
 	}
 }
@@ -619,23 +618,23 @@ bool CarHandling::keyboardCallback(GLFWwindow* window)
 
 	if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
 	{
-		this->vehicle->applyEngineForce(5000, 2);
-		this->vehicle->applyEngineForce(5000, 3);
+		this->vehicle->applyEngineForce(-15000, 2);
+		this->vehicle->applyEngineForce(-15000, 3);
 		handled = true;
 	}
 
 	if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
 	{
-		this->vehicle->applyEngineForce(-3000, 2);
-		this->vehicle->applyEngineForce(-3000, 3);
+		this->vehicle->applyEngineForce(13000, 2);
+		this->vehicle->applyEngineForce(13000, 3);
 		handled = true;
 	}
 
 	//Handbrake
 	if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
 	{
-		this->vehicle->setBrake(500, 2);
-		this->vehicle->setBrake(500, 3);
+		//this->vehicle->setBrake(500, 2);
+		//this->vehicle->setBrake(500, 3);
 		handled = true;
 	}
 	//Key released events
@@ -660,8 +659,8 @@ bool CarHandling::keyboardCallback(GLFWwindow* window)
 
 	if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) != GLFW_PRESS)
 	{
-		this->vehicle->setBrake(0, 2);
-		this->vehicle->setBrake(0, 3);
+		//this->vehicle->setBrake(0, 2);
+		//this->vehicle->setBrake(0, 3);
 		handled = true;
 	}
 
