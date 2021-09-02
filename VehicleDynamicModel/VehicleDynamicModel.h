@@ -22,39 +22,6 @@ class btCollisionShape;
 #include "Definitions.h"
 //keep the collision shapes, for deletion/cleanup
 
-class btUtils {
-public:
-	static btRigidBody* localCreateRigidBody(btScalar mass, const btTransform& startTransform, btCollisionShape* shape, btDiscreteDynamicsWorld* dynamicsWorld)
-	{
-		btAssert((!shape || shape->getShapeType() != INVALID_SHAPE_PROXYTYPE));
-
-		//rigidbody is dynamic if and only if mass is non zero, otherwise static
-		bool isDynamic = (mass != 0.f);
-
-		btVector3 localInertia(0, 0, 0);
-		if (isDynamic)
-			shape->calculateLocalInertia(mass, localInertia);
-
-		//using motionstate is recommended, it provides interpolation capabilities, and only synchronizes 'active' objects
-
-#define USE_MOTIONSTATE 1
-#ifdef USE_MOTIONSTATE
-		btDefaultMotionState* myMotionState = new btDefaultMotionState(startTransform);
-
-		btRigidBody::btRigidBodyConstructionInfo cInfo(mass, myMotionState, shape, localInertia);
-
-		btRigidBody* body = new btRigidBody(cInfo);
-		//body->setContactProcessingThreshold(m_defaultContactProcessingThreshold);
-
-#else
-		btRigidBody* body = new btRigidBody(mass, 0, shape, localInertia);
-		body->setWorldTransform(startTransform);
-#endif  //
-
-		dynamicsWorld->addRigidBody(body);
-		return body;
-	}
-};
 class btVehicleDynamics {
 public:
 	btAlignedObjectArray<btCollisionShape*> m_collisionShapes;
@@ -269,19 +236,18 @@ subject to the following restrictions:
 3. This notice may not be removed or altered from any source distribution.
 */
 
-class CarHandlingDemo
+class CarHandlingDemo: public IVehicleDynamics
 {
 public:
-
 	CarHandlingDemo() {};
 
 	void initPhysics(std::vector<IndexedVerticesObject*>& rro);
-
-	void exitPhysics();
+	void setInitialTransform(btTransform _initialTransform);
+	void exitPhysics()override;
 
 	virtual ~CarHandlingDemo();
 
-	virtual void stepSimulation(float deltaTime);
+	virtual void stepSimulation(float deltaTime)override;
 
 	virtual bool mouseMoveCallback(float x, float y)
 	{
@@ -297,6 +263,12 @@ public:
 
 	virtual void physicsDebugDraw(int debugFlags);
 
+	virtual btTransform getWheelTransformWS(int index);
+
+	virtual btTransform getChassisTransform();
+
+	virtual btVector3 getChassisCentreOfMass();
+
 	virtual void resetCamera()
 	{
 		float dist = 5 * 8;
@@ -305,14 +277,24 @@ public:
 		float targetPos[3] = { -0.33, -0.72, 4.5 };
 		//guiHelper->resetCamera(dist, pitch, yaw, targetPos[0], targetPos[1], targetPos[2]);
 	}
+	virtual btVector3 getChassisDimensions() {
+		return chassisDimensions;
+	}
+	virtual btScalar getWheelWidth() {
+		return wheelWidth;
+	}
+	virtual btScalar getWheelRadius() {
+		return wheelRadius;
+	}
+
 
 public:
 	btRigidBody* generateRoad(std::vector<IndexedVerticesObject*>& rro);
-	btDiscreteDynamicsWorld* dynamicsWorld;
 
 	btRaycastVehicle* vehicle;
 
 	btAlignedObjectArray<btCollisionShape*> collisionShapes;
+
 
 	btRigidBody* createGroundRigidBodyFromShape(btCollisionShape* groundShape);
 
@@ -320,6 +302,8 @@ public:
 	btTransform initialTransform;
 	btRigidBody* chassisRigidBody;
 	btVector3 chassisDimensions = btVector3(1.5f, 1.0f, 0.7f);
+	btScalar wheelWidth = btScalar(0.4);
+	btScalar wheelRadius = btScalar(0.5);
 	void addWheels(
 		btVector3* halfExtents,
 		btRaycastVehicle* vehicle,
@@ -327,13 +311,15 @@ public:
 };
 
 
-class CarHandling
+class CarHandling: public IVehicleDynamics
 {
 public:
 
 	CarHandling() {};
 
 	void initPhysics(std::vector<IndexedVerticesObject*>& rro);
+
+	void setInitialTransform(btTransform _initialTransform);
 
 	void exitPhysics();
 
@@ -355,6 +341,21 @@ public:
 
 	virtual void physicsDebugDraw(int debugFlags);
 
+	virtual btTransform getWheelTransformWS(int index);
+
+	virtual btTransform getChassisTransform();
+
+	virtual btVector3 getChassisCentreOfMass();
+
+	virtual btVector3 getChassisDimensions() {
+		return chassisDimensions;
+	}
+	virtual btScalar getWheelWidth() {
+		return wheelWidth;
+	}
+	virtual btScalar getWheelRadius() {
+		return wheelRadius;
+	}
 	virtual void resetCamera()
 	{
 		float dist = 5 * 8;
@@ -366,7 +367,6 @@ public:
 
 public:
 	btRigidBody* generateRoad(std::vector<IndexedVerticesObject*>& rro);
-	btDiscreteDynamicsWorld* dynamicsWorld;
 
 	btRaycastVehicle* vehicle;
 
@@ -378,6 +378,8 @@ public:
 	btTransform initialTransform;
 	btRigidBody* chassisRigidBody;
 	btVector3 chassisDimensions = btVector3(1.5f, 1.0f, 0.7f);
+	btScalar wheelWidth = btScalar(0.4);
+	btScalar wheelRadius = btScalar(0.5);
 	void addWheels(
 		btVector3* halfExtents,
 		btRaycastVehicle* vehicle,

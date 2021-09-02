@@ -160,6 +160,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\tinyxml2\tinyxml2.cpp" />
+    <ClCompile Include="AdvancedVehicleModel.cpp" />
     <ClCompile Include="CDT\src\CDT.cpp" />
     <ClCompile Include="Definitions.h" />
     <ClCompile Include="main.cpp" />
@@ -172,6 +173,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\tinyxml2\tinyxml2.h" />
+    <ClInclude Include="AdvancedVehicleModel.h" />
     <ClInclude Include="boost\asio\thread_pool.hpp" />
     <ClInclude Include="CDT\include\CDT.h" />
     <ClInclude Include="CDT\include\CDT.hpp" />

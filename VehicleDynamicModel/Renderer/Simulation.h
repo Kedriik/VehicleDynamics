@@ -25,6 +25,7 @@
 #include "../VehicleDynamicModel.h"
 #include "objloader.hpp"
 #include "OpenDriveDocument.h"
+#include "../AdvancedVehicleModel.h"
 class Simulation
 {
 public:
@@ -286,7 +287,7 @@ public:
 		GLuint drawMode = GL_FILL;
 		double iddleTime = 0;
 		bool doDebugDraw = false;
-		CarHandling vehicleDynamics;
+		IVehicleDynamics* vehicleDynamics = new Hinge2Vehicle();
 		std::vector<VerticesObject*> wheels;
 		std::vector<float> wheelRotations;
 		VerticesObject* chassis = nullptr;
@@ -308,21 +309,17 @@ public:
 			double dot = normalized.x * OX.x + normalized.y * OX.y;
 			double det = normalized.x * OX.y - normalized.y * OX.x;
 			double initialAngle = atan2(det, dot);
-
-			vehicleDynamics.initialTransform.setRotation(btQuaternion(btVector3(0,0,-1), initialAngle)* btQuaternion(btVector3(1, 0, 0), 1.57));
-			vehicleDynamics.initialTransform.setOrigin(btVector3(start_pos.x, start_pos.y, 3));
-			vehicleDynamics.initPhysics(ivos);
-			//vehicleDynamics.vehicle.
-			//glm::mat4 initialModelMatrix = glm::scale(glm::vec3(vehicleDynamics.chassisDimensions.x(), vehicleDynamics.chassisDimensions.y(), vehicleDynamics.chassisDimensions.z()));
-			//chassis->ModelMatrix = initialModelMatrix;
+			btTransform initialTransform;
+			initialTransform.setRotation(btQuaternion(btVector3(0,0,-1), initialAngle)* btQuaternion(btVector3(1, 0, 0), 1.57));
+			initialTransform.setOrigin(btVector3(start_pos.x, start_pos.y, 3));
+			vehicleDynamics->setInitialTransform(initialTransform);
+ 			vehicleDynamics->initPhysics(ivos);
 			for (int i = 0; i < 4; i++) {
-				btWheelInfo wheelInfo = vehicleDynamics.vehicle->getWheelInfo(i);
-				wheels.push_back(generateWheel(glm::vec3(wheelInfo.m_wheelsRadius,1,1)));
-				wheelRotations.push_back(0);
+				wheels.push_back(generateWheel(glm::vec3(vehicleDynamics->getWheelRadius(), 1, 1)));
 			}
 			dd->init();
-			vehicleDynamics.dynamicsWorld->setDebugDrawer(dd);
-			vehicleDynamics.dynamicsWorld->getDebugDrawer()->setDebugMode(btIDebugDraw::DBG_DrawWireframe);
+			vehicleDynamics->dynamicsWorld->setDebugDrawer(dd);
+			vehicleDynamics->dynamicsWorld->getDebugDrawer()->setDebugMode(btIDebugDraw::DBG_DrawWireframe);
 		
 		}
 		do
@@ -334,13 +331,13 @@ public:
 			///////////////
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			if (doPhysics) {
-				vehicleDynamics.keyboardCallback(window);
-				vehicleDynamics.dynamicsWorld->stepSimulation(deltaTime);
+				vehicleDynamics->keyboardCallback(window);
+				vehicleDynamics->dynamicsWorld->stepSimulation(deltaTime);
 				//std::cout << '\r' << "                     " <<  std::flush;
 				//std::cout <<'\r'<< vehicleDynamics.vehicle->getCurrentSpeedKmHour() <<" km/h"<< std::flush;
 				if (doDebugDraw || glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS) {
 					dd->prepareFrame(ViewMatrix, RenderProgram);
-					vehicleDynamics.dynamicsWorld->debugDrawWorld();
+					vehicleDynamics->dynamicsWorld->debugDrawWorld();
 				}
 			}
 			//////////////
@@ -350,8 +347,8 @@ public:
 			if (glfwGetKey(window, GLFW_KEY_C) == GLFW_PRESS && doPhysics) {
 				
 				float matChassis[16];
-				vehicleDynamics.chassisRigidBody->getWorldTransform().getOpenGLMatrix(matChassis);
-				btVector3 pos = vehicleDynamics.chassisRigidBody->getCenterOfMassPosition();
+				vehicleDynamics->getChassisTransform().getOpenGLMatrix(matChassis);
+				btVector3 pos = vehicleDynamics->getChassisCentreOfMass();
 				glm::vec3 forward = glm::normalize(glm::vec3( glm::make_mat4(matChassis)* glm::vec4(0, 0, 1, 0)));
 				glm::vec3 up = glm::normalize(glm::vec3(glm::make_mat4(matChassis)* glm::vec4(0, 1, 0, 0)));
 				
@@ -427,22 +424,9 @@ public:
 			if(doPhysics){
 				for (int i = 0; i < wheels.size();i++) {
 					VerticesObject* wheel = wheels.at(i);
-					glm::mat4 ModelMatrix = glm::mat4(1.0f);
 					float mat[16];
-					btWheelInfo::RaycastInfo wheelRaycastInfo  = vehicleDynamics.vehicle->getWheelInfo(i).m_raycastInfo;
-					btWheelInfo wheelInfo = vehicleDynamics.vehicle->getWheelInfo(i);
-					//glm::mat4 wheelRot = glm::rotate(57.2958f * float(wheelInfo.m_rotation), glm::vec3(wheelRaycastInfo.m_wheelAxleWS.x(), wheelRaycastInfo.m_wheelAxleWS.y(), wheelRaycastInfo.m_wheelAxleWS.z()));
-					wheelRotations.at(i) += wheelInfo.m_deltaRotation;
-					glm::quat wheelRot = glm::angleAxis(radians(wheelRotations.at(i)), glm::normalize(glm::vec3(wheelInfo.m_wheelAxleCS.x(), wheelInfo.m_wheelAxleCS.y(), wheelInfo.m_wheelAxleCS.z())));
-				
-					//transform = vehicle->getWheelInfo(index).m_worldTransform;
-					//transform.getOpenGLMatrix(mat);
-					//wheelInfo.m_worldTransform.getOpenGLMatrix(mat);
-					vehicleDynamics.vehicle->updateWheelTransform(i, false);
-					vehicleDynamics.vehicle->getWheelTransformWS(i).getOpenGLMatrix(mat);
-					wheels.at(i)->ModelMatrix = toMat4(wheelRot);
-					//ModelMatrix = wheels.at(i)->ModelMatrix ;
-					ModelMatrix = glm::make_mat4(mat);// *toMat4(wheelRot);
+					vehicleDynamics->getWheelTransformWS(i).getOpenGLMatrix(mat);
+					glm::mat4 ModelMatrix = glm::make_mat4(mat);
 					glUniformMatrix4fv(glGetUniformLocation(RenderProgram, "ModelMatrix"), 1, GL_FALSE, &ModelMatrix[0][0]);
 					glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, wheel->getColor());
 					glEnableVertexAttribArray(0);
@@ -464,7 +448,7 @@ public:
 				}
 				glm::mat4 ModelMatrix = glm::mat4(1.0);
 				float matChassis[16];
-				vehicleDynamics.chassisRigidBody->getWorldTransform().getOpenGLMatrix(matChassis);
+				vehicleDynamics->getChassisTransform().getOpenGLMatrix(matChassis);
 				ModelMatrix = glm::make_mat4(matChassis);
 				glUniformMatrix4fv(glGetUniformLocation(RenderProgram, "ModelMatrix"), 1, GL_FALSE, &ModelMatrix[0][0]);
 				glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, chassis->getColor());

@@ -45,6 +45,9 @@
     <ClCompile Include="VehicleDynamicModel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="AdvancedVehicleModel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\tinyxml2\tinyxml2.h">
@@ -90,6 +93,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="objloader.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="AdvancedVehicleModel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

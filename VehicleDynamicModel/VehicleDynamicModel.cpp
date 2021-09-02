@@ -95,6 +95,10 @@ void CarHandlingDemo::initPhysics(std::vector<IndexedVerticesObject*>& rro)
 		this->addWheels(&temp_dimensions, this->vehicle, tuning);
 	}
 }
+void CarHandlingDemo::setInitialTransform(btTransform _initialTransform)
+{
+	this->initialTransform = _initialTransform;
+}
 btRigidBody* CarHandlingDemo::createChassisRigidBodyFromShape(btCollisionShape* chassisShape)
 {
 	btTransform chassisTransform;
@@ -260,6 +264,18 @@ void CarHandlingDemo::physicsDebugDraw(int debugFlags)
 		this->dynamicsWorld->debugDrawWorld();
 	}
 }
+btTransform CarHandlingDemo::getWheelTransformWS(int index)
+{
+	return this->vehicle->getWheelTransformWS(index);
+}
+btTransform CarHandlingDemo::getChassisTransform()
+{
+	return this->chassisRigidBody->getWorldTransform();
+}
+btVector3 CarHandlingDemo::getChassisCentreOfMass()
+{
+	return this->chassisRigidBody->getCenterOfMassPosition();
+}
 void CarHandlingDemo::stepSimulation(float deltaTime)
 {
 	dynamicsWorld->stepSimulation(deltaTime, 2);
@@ -299,8 +315,8 @@ bool CarHandlingDemo::keyboardCallback(GLFWwindow* window)
 	//Handbrake
 	if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
 	{
-		this->vehicle->setBrake(500, 2);
-		this->vehicle->setBrake(500, 3);
+		//this->vehicle->setBrake(500, 2);
+		//this->vehicle->setBrake(500, 3);
 		handled = true;
 	}
 	//Key released events
@@ -325,13 +341,17 @@ bool CarHandlingDemo::keyboardCallback(GLFWwindow* window)
 
 	if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) != GLFW_PRESS)
 	{
-		this->vehicle->setBrake(0, 2);
-		this->vehicle->setBrake(0, 3);
+		//this->vehicle->setBrake(0, 2);
+		//this->vehicle->setBrake(0, 3);
 		handled = true;
 	}
 
 	return handled;
 }
+
+
+
+
 void CarHandling::initPhysics(std::vector<IndexedVerticesObject*>& rro)
 {
 	//Collision configuration contains default setup for memory, collision setup. Advanced users can create their own configuration.
@@ -376,7 +396,7 @@ void CarHandling::initPhysics(std::vector<IndexedVerticesObject*>& rro)
 
 		//Creates the ground rigidbody
 		btRigidBody* groundRigidBody = this->createGroundRigidBodyFromShape(groundShape);
-
+		
 		//Adds it to the world
 		this->dynamicsWorld->addRigidBody(groundRigidBody);
 	}
@@ -429,6 +449,10 @@ void CarHandling::initPhysics(std::vector<IndexedVerticesObject*>& rro)
 		this->addWheels(&temp_dimensions, this->vehicle, tuning);
 	}
 }
+void CarHandling::setInitialTransform(btTransform _initialTransform)
+{
+	this->initialTransform = _initialTransform;
+}
 btRigidBody* CarHandling::createChassisRigidBodyFromShape(btCollisionShape* chassisShape)
 {
 	btTransform chassisTransform;
@@ -466,7 +490,7 @@ btRigidBody* CarHandling::createGroundRigidBodyFromShape(btCollisionShape* groun
 		//using motionstate is optional, it provides interpolation capabilities, and only synchronizes 'active' objects
 		btDefaultMotionState* groundMotionState = new btDefaultMotionState(groundTransform);
 		btRigidBody::btRigidBodyConstructionInfo rbInfo(mass, groundMotionState, groundShape, localInertia);
-
+		
 		return new btRigidBody(rbInfo);
 	}
 }
@@ -506,10 +530,6 @@ void CarHandling::addWheels(
 	btVector3 wheelAxleCS(1, 0, 0);
 
 	btScalar suspensionRestLength(0.3);
-
-	btScalar wheelWidth(0.4);
-
-	btScalar wheelRadius(0.5);
 
 	//The height where the wheels are connected to the chassis
 	btScalar connectionHeight(0.5);
@@ -594,6 +614,14 @@ void CarHandling::physicsDebugDraw(int debugFlags)
 		this->dynamicsWorld->debugDrawWorld();
 	}
 }
+btTransform CarHandling::getWheelTransformWS(int index)
+{
+	return this->vehicle->getWheelTransformWS(index);
+}
+btTransform CarHandling::getChassisTransform()
+{
+	return this->chassisRigidBody->getWorldTransform();
+}
 void CarHandling::stepSimulation(float deltaTime)
 {
 	dynamicsWorld->stepSimulation(deltaTime, 2);
@@ -665,4 +693,8 @@ bool CarHandling::keyboardCallback(GLFWwindow* window)
 	}
 
 	return handled;
+}
+btVector3 CarHandling::getChassisCentreOfMass()
+{
+	return this->chassisRigidBody->getCenterOfMassPosition();
 }

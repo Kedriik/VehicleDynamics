@@ -19,8 +19,9 @@
 #include <vector>
 #include <chrono>
 #include "objloader.hpp"
-//#include "windows.h"
 #include "..\VehicleDynamicModel\Renderer\glm\glm\glm.hpp"
+#include "btBulletDynamicsCommon.h"
+
 struct ModelData
 {
 	GLuint ModelVertexBuffer;
@@ -494,5 +495,81 @@ public:
 		glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);*/
 	}
 };
+class IVehicleDynamics {
+public:
+	btDiscreteDynamicsWorld* dynamicsWorld;
+	virtual void initPhysics(std::vector<IndexedVerticesObject*>& rro) = 0;
+	virtual void setInitialTransform(btTransform _initialTransform) = 0;
+	virtual void exitPhysics() = 0;
+	virtual void stepSimulation(float deltaTime) = 0;
+	virtual bool keyboardCallback(GLFWwindow* window) = 0;
+	virtual btTransform getWheelTransformWS(int index) = 0;
+	virtual btTransform getChassisTransform() = 0;
+	virtual btVector3 getChassisCentreOfMass() = 0;
+	virtual btVector3 getChassisDimensions() = 0;
+	virtual btScalar getWheelWidth() = 0;
+	virtual btScalar getWheelRadius() = 0;
+};
+class btUtils {
+public:
+	static btRigidBody* localCreateRigidBody(btScalar mass, const btTransform& startTransform, btCollisionShape* shape, btDiscreteDynamicsWorld* dynamicsWorld)
+	{
+		btAssert((!shape || shape->getShapeType() != INVALID_SHAPE_PROXYTYPE));
 
+		//rigidbody is dynamic if and only if mass is non zero, otherwise static
+		bool isDynamic = (mass != 0.f);
+
+		btVector3 localInertia(0, 0, 0);
+		if (isDynamic)
+			shape->calculateLocalInertia(mass, localInertia);
+
+		//using motionstate is recommended, it provides interpolation capabilities, and only synchronizes 'active' objects
+
+#define USE_MOTIONSTATE 1
+#ifdef USE_MOTIONSTATE
+		btDefaultMotionState* myMotionState = new btDefaultMotionState(startTransform);
+
+		btRigidBody::btRigidBodyConstructionInfo cInfo(mass, myMotionState, shape, localInertia);
+
+		btRigidBody* body = new btRigidBody(cInfo);
+		//body->setContactProcessingThreshold(m_defaultContactProcessingThreshold);
+
+#else
+		btRigidBody* body = new btRigidBody(mass, 0, shape, localInertia);
+		body->setWorldTransform(startTransform);
+#endif  //
+
+		dynamicsWorld->addRigidBody(body);
+		return body;
+	}
+	static void rotate_vector_by_quaternion(const btVector3& v, const btQuaternion& q, btVector3& vprime)
+	{
+		// Extract the vector part of the quaternion
+		btVector3 u(q.x(), q.y(), q.z());
+
+		// Extract the scalar part of the quaternion
+		float s = q.w();
+
+		// Do the math
+		vprime = 2.0f * u.dot(v) * u
+			+ (s * s - u.dot(u)) * v
+			+ 2.0f * s * u.cross(v);
+	}
+	static btCollisionShape* generateRoads(std::vector<IndexedVerticesObject*>& rro) {
+		btTriangleMesh* tMesh = new btTriangleMesh();
+		for (int i = 0; i < rro.size(); i++)
+		{
+			IndexedVerticesObject* ivo = rro.at(i);
+			for (int j = 0; j < ivo->indexes.size(); j += 3) {
+				glm::dvec4 t1, t2, t3;
+				t1 = ivo->vertices.at(ivo->indexes.at(j));
+				t2 = ivo->vertices.at(ivo->indexes.at(j + 1));
+				t3 = ivo->vertices.at(ivo->indexes.at(j + 2));
+
+				tMesh->addTriangle(btVector3(t1.x, t1.y, t1.z), btVector3(t2.x, t2.y, t2.z), btVector3(t3.x, t3.y, t3.z));
+			}
+		}
+		return new btBvhTriangleMeshShape(tMesh, true);
+	}
+};
 #endif

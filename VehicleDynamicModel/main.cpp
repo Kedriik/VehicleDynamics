@@ -21,9 +21,9 @@ int main(int argc, char** argv)
 		Road::S_STEP = 10.1;
 		Road::T_STEP = 1.1;
 	}
-	Road::debugRender = true;
+	Road::debugRender = false;
 	Simulation simulation(openDriveFilePath);
-	simulation.doPhysics = false;
+	simulation.doPhysics = true;
 	simulation.init(1500, 1000);
 	simulation.launchLoop();
 }
