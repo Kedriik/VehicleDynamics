@@ -104,7 +104,6 @@ void Hinge2Vehicle::initPhysics(std::vector<IndexedVerticesObject*>& rro)
 	dynamicsWorld->setGravity(btVector3(0,0,-9.810));
 	btTransform tr;
 	tr.setIdentity();
-	tr.setOrigin(btVector3(0, -3, 0));
 
 	//either use heightfield or triangle mesh
 
@@ -177,17 +176,8 @@ void Hinge2Vehicle::initPhysics(std::vector<IndexedVerticesObject*>& rro)
 		btUtils::rotate_vector_by_quaternion(_childAxis, initialTransform.getRotation(), childAxis);
 		btVector3 anchor = tr.getOrigin();
 		btHinge2Constraint* pHinge2 = new btHinge2Constraint(*pBodyA, *pBodyB, anchor, parentAxis.normalize(), childAxis.normalize());
+		m_wheelsHinges.push_back(pHinge2);
 		dynamicsWorld->addConstraint(pHinge2, true);
-
-		// Drive engine.
-		pHinge2->enableMotor(3, true);
-		pHinge2->setMaxMotorForce(3, 1000);
-		pHinge2->setTargetVelocity(3, -5);
-
-		// Steering engine.
-		pHinge2->enableMotor(5, true);
-		pHinge2->setMaxMotorForce(5, 1000);
-		pHinge2->setTargetVelocity(5, 0);
 
 		pHinge2->setParam(BT_CONSTRAINT_CFM, 0.15f, 2);
 		pHinge2->setParam(BT_CONSTRAINT_ERP, 0.35f, 2);
@@ -197,7 +187,8 @@ void Hinge2Vehicle::initPhysics(std::vector<IndexedVerticesObject*>& rro)
 
 		//pHinge2->setDbgDrawSize(btScalar(5.f));
 	}
-	
+	this->enableDrive();
+	this->enableSteer();
 }
 
 void Hinge2Vehicle::stepSimulation(float deltaTime)
@@ -247,99 +238,39 @@ void Hinge2Vehicle::stepSimulation(float deltaTime)
 
 bool Hinge2Vehicle::keyboardCallback(GLFWwindow* window)
 {
-	/*
-	bool handled = false;
-	bool isShiftPressed = m_guiHelper->getAppInterface()->m_window->isModifierKeyPressed(B3G_SHIFT);
-
-	if (state)
+	if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
 	{
-		if (isShiftPressed)
-		{
-		}
-		else
-		{
-			switch (key)
-			{
-			case B3G_LEFT_ARROW:
-			{
-				handled = true;
-				gVehicleSteering += steeringIncrement;
-				if (gVehicleSteering > steeringClamp)
-					gVehicleSteering = steeringClamp;
-
-				break;
-			}
-			case B3G_RIGHT_ARROW:
-			{
-				handled = true;
-				gVehicleSteering -= steeringIncrement;
-				if (gVehicleSteering < -steeringClamp)
-					gVehicleSteering = -steeringClamp;
-
-				break;
-			}
-			case B3G_UP_ARROW:
-			{
-				handled = true;
-				gEngineForce = maxEngineForce;
-				gBreakingForce = 0.f;
-				break;
-			}
-			case B3G_DOWN_ARROW:
-			{
-				handled = true;
-				gEngineForce = -maxEngineForce;
-				gBreakingForce = 0.f;
-				break;
-			}
-
-			case B3G_F7:
-			{
-				handled = true;
-				btDiscreteDynamicsWorld* world = (btDiscreteDynamicsWorld*)dynamicsWorld;
-				world->setLatencyMotionStateInterpolation(!world->getLatencyMotionStateInterpolation());
-				printf("world latencyMotionStateInterpolation = %d\n", world->getLatencyMotionStateInterpolation());
-				break;
-			}
-			case B3G_F6:
-			{
-				handled = true;
-				//switch solver (needs demo restart)
-				useMCLPSolver = !useMCLPSolver;
-				printf("switching to useMLCPSolver = %d\n", useMCLPSolver);
-
-				delete m_solver;
-				if (useMCLPSolver)
-				{
-					btDantzigSolver* mlcp = new btDantzigSolver();
-					//btSolveProjectedGaussSeidel* mlcp = new btSolveProjectedGaussSeidel;
-					btMLCPSolver* sol = new btMLCPSolver(mlcp);
-					m_solver = sol;
-				}
-				else
-				{
-					m_solver = new btSequentialImpulseConstraintSolver();
-				}
-
-				dynamicsWorld->setConstraintSolver(m_solver);
-
-				//exitPhysics();
-				//initPhysics();
-				break;
-			}
-
-			case B3G_F5:
-				handled = true;
-				m_useDefaultCamera = !m_useDefaultCamera;
-				break;
-			default:
-				break;
-			}
-		}
+		this->steerLeft();
 	}
-	else
+
+	if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
 	{
-	}*/
+		this->steerRight();
+	}
+
+	if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
+	{
+		this->accelerateToV(100);
+	}
+
+	if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
+	{
+		this->brake();
+	}
+
+	if (glfwGetKey(window, GLFW_KEY_LEFT) != GLFW_PRESS && glfwGetKey(window, GLFW_KEY_RIGHT) != GLFW_PRESS)
+	{
+		this->letOffWheel();
+	}
+
+	if (glfwGetKey(window, GLFW_KEY_DOWN) != GLFW_PRESS && glfwGetKey(window, GLFW_KEY_UP) != GLFW_PRESS)
+	{
+		this->letOffAccelerator();
+	}
+
+	if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) != GLFW_PRESS)
+	{
+	}
 	return true;
 }
 

@@ -46,6 +46,7 @@ class Hinge2Vehicle : public IVehicleDynamics
 public:
 	btRigidBody* m_carChassis;
 	std::vector<btRigidBody*> m_wheels;
+	std::vector< btHinge2Constraint*> m_wheelsHinges;
 	btRigidBody* localCreateRigidBody(btScalar mass, const btTransform& worldTransform, btCollisionShape* colSape);
 	int m_wheelInstances[4];
 	bool m_useDefaultCamera;
@@ -84,7 +85,72 @@ public:
 	virtual btScalar getWheelRadius() {
 		return wheelRadius;
 	}
+	void enableDrive() {
+		/*
+		// Drive engine.
+		pHinge2->enableMotor(3, true);
+		pHinge2->setMaxMotorForce(3, 1000);
+		pHinge2->setTargetVelocity(3, 0);
 
+		// Steering engine.
+		pHinge2->enableMotor(5, true);
+		pHinge2->setMaxMotorForce(5, 1000);
+		pHinge2->setTargetVelocity(5, 0);
+		*/
+
+
+		m_wheelsHinges.at(2)->enableMotor(3, true);
+		m_wheelsHinges.at(2)->setMaxMotorForce(3, 10);
+		m_wheelsHinges.at(2)->setTargetVelocity(3, 0);
+
+		m_wheelsHinges.at(3)->enableMotor(3, true);
+		m_wheelsHinges.at(3)->setMaxMotorForce(3, 10);
+		m_wheelsHinges.at(3)->setTargetVelocity(3, 0);
+
+		m_wheelsHinges.at(2)->enableMotor(5, true);
+		m_wheelsHinges.at(2)->setMaxMotorForce(5, 1000);
+		m_wheelsHinges.at(2)->setTargetVelocity(5, 0);
+
+		m_wheelsHinges.at(3)->enableMotor(5, true);
+		m_wheelsHinges.at(3)->setMaxMotorForce(5, 1000);
+		m_wheelsHinges.at(3)->setTargetVelocity(5, 0);
+	}
+
+	void enableSteer() {
+		m_wheelsHinges.at(0)->enableMotor(5, true);
+		m_wheelsHinges.at(0)->setMaxMotorForce(5, 1000);
+		m_wheelsHinges.at(0)->setTargetVelocity(5, 0);
+
+		m_wheelsHinges.at(1)->enableMotor(5, true);
+		m_wheelsHinges.at(1)->setMaxMotorForce(5, 1000);
+		m_wheelsHinges.at(1)->setTargetVelocity(5, 0);
+	}
+	void steerLeft() {
+		m_wheelsHinges.at(0)->setTargetVelocity(5, -0.3);
+		m_wheelsHinges.at(1)->setTargetVelocity(5, -0.3);
+	}
+	void steerRight() {
+		m_wheelsHinges.at(0)->setTargetVelocity(5, 0.3);
+		m_wheelsHinges.at(1)->setTargetVelocity(5, 0.3);
+	}
+	void letOffWheel() {
+		m_wheelsHinges.at(0)->setTargetVelocity(5, 0);
+		m_wheelsHinges.at(1)->setTargetVelocity(5, 0);
+	}
+	void accelerateToV(float V) {
+		m_wheelsHinges.at(2)->enableMotor(3, true);
+		m_wheelsHinges.at(3)->enableMotor(3, true);
+		m_wheelsHinges.at(2)->setTargetVelocity(3, -V);
+		m_wheelsHinges.at(3)->setTargetVelocity(3, -V);
+	}
+	void letOffAccelerator() {
+		m_wheelsHinges.at(2)->enableMotor(3, false);
+		m_wheelsHinges.at(3)->enableMotor(3, false);
+	}
+	void brake() {
+		m_wheelsHinges.at(2)->setTargetVelocity(3, 0);
+		m_wheelsHinges.at(3)->setTargetVelocity(3, 0);
+	}
 	Hinge2Vehicle();
 
 	virtual ~Hinge2Vehicle();
