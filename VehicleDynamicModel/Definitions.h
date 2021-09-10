@@ -509,6 +509,9 @@ public:
 	virtual btVector3 getChassisDimensions() = 0;
 	virtual btScalar getWheelWidth() = 0;
 	virtual btScalar getWheelRadius() = 0;
+	virtual float getCurrentSpeedKmHour() {
+		return 0;
+	}
 };
 class btUtils {
 public:

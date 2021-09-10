@@ -287,7 +287,7 @@ public:
 		GLuint drawMode = GL_FILL;
 		double iddleTime = 0;
 		bool doDebugDraw = false;
-		IVehicleDynamics* vehicleDynamics = new Hinge2Vehicle();
+		IVehicleDynamics* vehicleDynamics = new CarHandling();
 		std::vector<VerticesObject*> wheels;
 		std::vector<float> wheelRotations;
 		VerticesObject* chassis = nullptr;
@@ -333,8 +333,8 @@ public:
 			if (doPhysics) {
 				vehicleDynamics->keyboardCallback(window);
 				vehicleDynamics->dynamicsWorld->stepSimulation(deltaTime);
-				//std::cout << '\r' << "                     " <<  std::flush;
-				//std::cout <<'\r'<< vehicleDynamics.vehicle->getCurrentSpeedKmHour() <<" km/h"<< std::flush;
+				std::cout << '\r' << "                     " <<  std::flush;
+				std::cout <<'\r'<< vehicleDynamics->getCurrentSpeedKmHour() <<" km/h"<< std::flush;
 				if (doDebugDraw || glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS) {
 					dd->prepareFrame(ViewMatrix, RenderProgram);
 					vehicleDynamics->dynamicsWorld->debugDrawWorld();

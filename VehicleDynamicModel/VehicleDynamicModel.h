@@ -356,6 +356,9 @@ public:
 	virtual btScalar getWheelRadius() {
 		return wheelRadius;
 	}
+	virtual float getCurrentSpeedKmHour()override {
+		return this->vehicle->getCurrentSpeedKmHour();
+	}
 	virtual void resetCamera()
 	{
 		float dist = 5 * 8;

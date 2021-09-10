@@ -175,20 +175,20 @@ void CarHandlingDemo::addWheels(
 	//The axis which the wheel rotates arround
 	btVector3 wheelAxleCS(-1, 0, 0);
 
-	btScalar suspensionRestLength(0.7);
+	btScalar suspensionRestLength(0.30);
 
-	btScalar wheelWidth(0.4);
+	btScalar wheelWidth(0.3);
 
 	btScalar wheelRadius(0.5);
 
 	//The height where the wheels are connected to the chassis
-	btScalar connectionHeight(1.2);
+	btScalar connectionHeight(0.5);
 
 	//All the wheel configuration assumes the vehicle is centered at the origin and a right handed coordinate system is used
 	btVector3 wheelConnectionPoint(halfExtents->x() - wheelRadius, connectionHeight, halfExtents->z() - wheelWidth);
 
 	//Adds the front wheels
-	vehicle->addWheel(wheelConnectionPoint, wheelDirectionCS0, wheelAxleCS, suspensionRestLength, wheelRadius, tuning, true);
+	vehicle->addWheel(wheelConnectionPoint * btVector3(1, 1, 1), wheelDirectionCS0, wheelAxleCS, suspensionRestLength, wheelRadius, tuning, true);
 
 	vehicle->addWheel(wheelConnectionPoint * btVector3(-1, 1, 1), wheelDirectionCS0, wheelAxleCS, suspensionRestLength, wheelRadius, tuning, true);
 
@@ -207,7 +207,7 @@ void CarHandlingDemo::addWheels(
 		wheel.m_wheelsDampingRelaxation = btScalar(0.5) * 2 * btSqrt(wheel.m_suspensionStiffness);//1;
 		//Larger friction slips will result in better handling
 		wheel.m_frictionSlip = btScalar(1.2);
-		wheel.m_rollInfluence = 1;
+		wheel.m_rollInfluence = 0.5;
 	}
 }
 void CarHandlingDemo::exitPhysics()
@@ -425,6 +425,21 @@ void CarHandling::initPhysics(std::vector<IndexedVerticesObject*>& rro)
 		//it's center of gravity does not change. This way we can add the chassis rigidbody one unit above our center of gravity
 		//keeping it under our chassis, and not in the middle of it
 		compound->addChildShape(localTransform, chassisShape);
+		btTransform localTrans;
+		localTrans.setIdentity();
+		//localTrans effectively shifts the center of mass with respect to the chassis
+		localTrans.setOrigin(btVector3(0, 1, 0));
+
+		compound->addChildShape(localTrans, chassisShape);
+
+		{
+			btCollisionShape* suppShape = new btBoxShape(btVector3(0.5f, 0.1f, 0.5f));
+			btTransform suppLocalTrans;
+			suppLocalTrans.setIdentity();
+			//localTrans effectively shifts the center of mass with respect to the chassis
+			suppLocalTrans.setOrigin(btVector3(0, 0, 0));
+			compound->addChildShape(suppLocalTrans, suppShape);
+		}
 
 		//Creates a rigid body
 		chassisRigidBody = this->createChassisRigidBodyFromShape(compound);
@@ -435,6 +450,7 @@ void CarHandling::initPhysics(std::vector<IndexedVerticesObject*>& rro)
 		btVehicleRaycaster* vehicleRayCaster = new btDefaultVehicleRaycaster(this->dynamicsWorld);
 
 		btRaycastVehicle::btVehicleTuning tuning;
+		
 
 		//Creates a new instance of the raycast vehicle
 		this->vehicle = new btRaycastVehicle(tuning, chassisRigidBody, vehicleRayCaster);
@@ -538,7 +554,7 @@ void CarHandling::addWheels(
 	btVector3 wheelConnectionPoint(2*halfExtents->x() - wheelRadius, connectionHeight, halfExtents->z() - wheelWidth);
 
 	//Adds the front wheels
-	vehicle->addWheel(wheelConnectionPoint, wheelDirectionCS0, wheelAxleCS, suspensionRestLength, wheelRadius, tuning, true);
+	vehicle->addWheel(wheelConnectionPoint * btVector3(1, 1, 1), wheelDirectionCS0, wheelAxleCS, suspensionRestLength, wheelRadius, tuning, true);
 
 	vehicle->addWheel(wheelConnectionPoint * btVector3(-1, 1, 1), wheelDirectionCS0, wheelAxleCS, suspensionRestLength, wheelRadius, tuning, true);
 
