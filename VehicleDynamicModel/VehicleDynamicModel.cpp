@@ -464,6 +464,7 @@ void CarHandling::initPhysics(std::vector<IndexedVerticesObject*>& rro)
 		//Adds the wheels to the vehicle
 		this->addWheels(&temp_dimensions, this->vehicle, tuning);
 	}
+	vehicle->setCoordinateSystem(0,1,2);
 }
 void CarHandling::setInitialTransform(btTransform _initialTransform)
 {
@@ -543,7 +544,7 @@ void CarHandling::addWheels(
 	btVector3 wheelDirectionCS0(0, -1, 0);
 
 	//The axis which the wheel rotates arround
-	btVector3 wheelAxleCS(1, 0, 0);
+	btVector3 wheelAxleCS(-1, 0, 0);
 
 	btScalar suspensionRestLength(0.3);
 
@@ -632,7 +633,8 @@ void CarHandling::physicsDebugDraw(int debugFlags)
 }
 btTransform CarHandling::getWheelTransformWS(int index)
 {
-	return this->vehicle->getWheelTransformWS(index);
+	//this->vehicle->updateWheelTransform(index, true);
+	return this->vehicle->getWheelInfo(index).m_worldTransform;// this->vehicle->getWheelTransformWS(index);
 }
 btTransform CarHandling::getChassisTransform()
 {
@@ -662,15 +664,15 @@ bool CarHandling::keyboardCallback(GLFWwindow* window)
 
 	if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
 	{
-		this->vehicle->applyEngineForce(-15000, 2);
-		this->vehicle->applyEngineForce(-15000, 3);
+		this->vehicle->applyEngineForce(15000, 2);
+		this->vehicle->applyEngineForce(15000, 3);
 		handled = true;
 	}
 
 	if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
 	{
-		this->vehicle->applyEngineForce(13000, 2);
-		this->vehicle->applyEngineForce(13000, 3);
+		this->vehicle->applyEngineForce(-40000, 2);
+		this->vehicle->applyEngineForce(-40000, 3);
 		handled = true;
 	}
 
