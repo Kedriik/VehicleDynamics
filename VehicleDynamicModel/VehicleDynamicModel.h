@@ -10,6 +10,8 @@
 #include "BulletDynamics/MLCPSolvers/btDantzigSolver.h"
 #include "BulletDynamics/MLCPSolvers/btSolveProjectedGaussSeidel.h"
 #include "BulletDynamics/MLCPSolvers/btMLCPSolver.h"
+#include <map>
+#include <math.h>
 class btVehicleTuning;
 class btCollisionShape;
 
@@ -315,7 +317,9 @@ class CarHandling: public IVehicleDynamics
 {
 public:
 
-	CarHandling() {};
+	CarHandling() {
+	
+	};
 
 	void initPhysics(std::vector<IndexedVerticesObject*>& rro);
 
@@ -367,7 +371,10 @@ public:
 		float targetPos[3] = { -0.33, -0.72, 4.5 };
 		//guiHelper->resetCamera(dist, pitch, yaw, targetPos[0], targetPos[1], targetPos[2]);
 	}
-
+	btTransform getChassisMassCenter() {
+		return this->chassisRigidBody->getCenterOfMassTransform();
+	}
+	void updateVehiclePhysics();
 public:
 	btRigidBody* generateRoad(std::vector<IndexedVerticesObject*>& rro);
 
@@ -383,6 +390,50 @@ public:
 	btVector3 chassisDimensions = btVector3(1.5f, 1.0f, 0.7f);
 	btScalar wheelWidth = btScalar(0.4);
 	btScalar wheelRadius = btScalar(0.5);
+	btScalar brakingForceIncrement = 1000;
+	btScalar engineForceIncrement = 5000;
+	btScalar steeringIncrement = 1;
+	btScalar maxBrakingForce = 5000;
+	btScalar minBrakingForce = 10;
+	btScalar maxEngineForce = 5000;
+	btScalar minEngineForce = 0;
+	btScalar maxSteering = 0.6;
+	btScalar currentSteeringAngle = 0;
+	btScalar currentAcceleratorPosition = 0;
+	btScalar currentAccelerationForce = 0;
+	btScalar currentBrakingForce = 0;
+	btScalar currentBrakePosition = 0;
+	std::map<int, double> input;
+	double deltaTime = 0;
+	void steerLeft() {
+		currentSteeringAngle = std::min(currentSteeringAngle + deltaTime * steeringIncrement, double(maxSteering));
+	}
+	void steerRight() {
+		currentSteeringAngle = std::max(currentSteeringAngle - deltaTime * steeringIncrement, -double(maxSteering));
+	}
+	void letOffWheel() {
+		//currentSteeringAngle = steeringIncrement*deltaTime
+		if (currentSteeringAngle > 0) {
+			currentSteeringAngle = std::max(0.0, currentSteeringAngle - deltaTime * steeringIncrement);
+		}
+		else {
+			currentSteeringAngle = std::min(0.0, currentSteeringAngle + deltaTime * steeringIncrement);
+		}
+	}
+	void accelerate() {
+		letOffBrake();
+		currentAccelerationForce = std::min(double(maxEngineForce), currentAccelerationForce + deltaTime * engineForceIncrement);
+	}
+	void letOffAccelerator() {
+		currentAccelerationForce = 0;
+	}
+	void brake() {
+		letOffAccelerator();
+		currentBrakingForce = std::min(double(maxBrakingForce), currentBrakingForce + deltaTime * brakingForceIncrement);
+	}
+	void letOffBrake() {
+		currentBrakingForce = 0;
+	}
 	void addWheels(
 		btVector3* halfExtents,
 		btRaycastVehicle* vehicle,

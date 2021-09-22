@@ -437,7 +437,7 @@ void CarHandling::initPhysics(std::vector<IndexedVerticesObject*>& rro)
 			btTransform suppLocalTrans;
 			suppLocalTrans.setIdentity();
 			//localTrans effectively shifts the center of mass with respect to the chassis
-			suppLocalTrans.setOrigin(btVector3(0, 0, 0));
+			suppLocalTrans.setOrigin(btVector3(0, 0.5, 0));
 			compound->addChildShape(suppLocalTrans, suppShape);
 		}
 
@@ -511,6 +511,24 @@ btRigidBody* CarHandling::createGroundRigidBodyFromShape(btCollisionShape* groun
 		return new btRigidBody(rbInfo);
 	}
 }
+void CarHandling::updateVehiclePhysics()
+{
+	
+	//swaybar below
+	if (this->vehicle->getWheelInfo(0).m_raycastInfo.m_suspensionLength < this->vehicle->getWheelInfo(1).m_raycastInfo.m_suspensionLength) {
+		this->vehicle->getWheelInfo(1).m_raycastInfo.m_suspensionLength = this->vehicle->getWheelInfo(0).m_raycastInfo.m_suspensionLength;
+	}
+	else {
+		this->vehicle->getWheelInfo(0).m_raycastInfo.m_suspensionLength = this->vehicle->getWheelInfo(1).m_raycastInfo.m_suspensionLength;
+	}
+
+	if (this->vehicle->getWheelInfo(2).m_raycastInfo.m_suspensionLength < this->vehicle->getWheelInfo(3).m_raycastInfo.m_suspensionLength) {
+		this->vehicle->getWheelInfo(3).m_raycastInfo.m_suspensionLength = this->vehicle->getWheelInfo(2).m_raycastInfo.m_suspensionLength;
+	}
+	else {
+		this->vehicle->getWheelInfo(2).m_raycastInfo.m_suspensionLength = this->vehicle->getWheelInfo(3).m_raycastInfo.m_suspensionLength;
+	}
+}
 btRigidBody* CarHandling::generateRoad(std::vector<IndexedVerticesObject*>& rro) {
 	btTriangleMesh* tMesh = new btTriangleMesh();
 	for (int i = 0; i < rro.size(); i++)
@@ -546,10 +564,10 @@ void CarHandling::addWheels(
 	//The axis which the wheel rotates arround
 	btVector3 wheelAxleCS(-1, 0, 0);
 
-	btScalar suspensionRestLength(0.3);
+	btScalar suspensionRestLength(0.2);
 
 	//The height where the wheels are connected to the chassis
-	btScalar connectionHeight(0.5);
+	btScalar connectionHeight(0.7);
 
 	//All the wheel configuration assumes the vehicle is centered at the origin and a right handed coordinate system is used
 	btVector3 wheelConnectionPoint(2*halfExtents->x() - wheelRadius, connectionHeight, halfExtents->z() - wheelWidth);
@@ -569,11 +587,11 @@ void CarHandling::addWheels(
 	for (int i = 0; i < vehicle->getNumWheels(); i++)
 	{
 		btWheelInfo& wheel = vehicle->getWheelInfo(i);
-		wheel.m_suspensionStiffness = 100;
-		wheel.m_wheelsDampingCompression = btScalar(0.3) * 2 * btSqrt(wheel.m_suspensionStiffness);//btScalar(0.8);
-		wheel.m_wheelsDampingRelaxation = btScalar(0.5) * 2 * btSqrt(wheel.m_suspensionStiffness);//1;
+		wheel.m_suspensionStiffness = 150;
+		wheel.m_wheelsDampingCompression =  btScalar(0.1) * 2 * btSqrt(wheel.m_suspensionStiffness);//btScalar(0.8);
+		wheel.m_wheelsDampingRelaxation =  btScalar(0.5) * 2 * btSqrt(wheel.m_suspensionStiffness);//1;
 		//Larger friction slips will result in better handling
-		wheel.m_frictionSlip = btScalar(2.2);
+		wheel.m_frictionSlip = btScalar(1.2);
 		wheel.m_rollInfluence = 1;
 	}
 }
@@ -640,9 +658,21 @@ btTransform CarHandling::getChassisTransform()
 {
 	return this->chassisRigidBody->getWorldTransform();
 }
-void CarHandling::stepSimulation(float deltaTime)
+void CarHandling::stepSimulation(float _deltaTime)
 {
+	deltaTime = _deltaTime;
+
+	this->vehicle->setSteeringValue(currentSteeringAngle,0);
+	this->vehicle->setSteeringValue(currentSteeringAngle,1);
+	this->vehicle->setBrake(currentBrakingForce, 0);
+	this->vehicle->setBrake(currentBrakingForce, 1);
+	this->vehicle->setBrake(currentBrakingForce, 2);
+	this->vehicle->setBrake(currentBrakingForce, 3);
+	this->vehicle->applyEngineForce(this->currentAccelerationForce, 2);
+	this->vehicle->applyEngineForce(this->currentAccelerationForce, 3);
+	this->updateVehiclePhysics();
 	dynamicsWorld->stepSimulation(deltaTime, 2);
+	
 }
 bool CarHandling::keyboardCallback(GLFWwindow* window)
 {
@@ -650,63 +680,50 @@ bool CarHandling::keyboardCallback(GLFWwindow* window)
 
 	if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)
 	{
-		this->vehicle->setSteeringValue(btScalar(0.3), 0);
-		this->vehicle->setSteeringValue(btScalar(0.3), 1);
+		steerLeft();
 		handled = true;
 	}
 
 	if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS)
 	{
-		this->vehicle->setSteeringValue(btScalar(-0.3), 0);
-		this->vehicle->setSteeringValue(btScalar(-0.3), 1);
+		steerRight();
 		handled = true;
 	}
 
 	if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)
 	{
-		this->vehicle->applyEngineForce(15000, 2);
-		this->vehicle->applyEngineForce(15000, 3);
+		accelerate();
 		handled = true;
 	}
 
 	if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)
 	{
-		this->vehicle->applyEngineForce(-40000, 2);
-		this->vehicle->applyEngineForce(-40000, 3);
+		brake();
 		handled = true;
 	}
 
 	//Handbrake
 	if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
 	{
-		//this->vehicle->setBrake(500, 2);
-		//this->vehicle->setBrake(500, 3);
 		handled = true;
 	}
 	//Key released events
 
 	if (glfwGetKey(window, GLFW_KEY_LEFT) != GLFW_PRESS && glfwGetKey(window, GLFW_KEY_RIGHT) != GLFW_PRESS)
 	{
-		this->vehicle->setSteeringValue(0, 0);
-		this->vehicle->setSteeringValue(0, 1);
+		letOffWheel();
 		handled = true;
 	}
 
 	if (glfwGetKey(window, GLFW_KEY_DOWN) != GLFW_PRESS && glfwGetKey(window, GLFW_KEY_UP) != GLFW_PRESS)
 	{
-		this->vehicle->applyEngineForce(0, 2);
-		this->vehicle->applyEngineForce(0, 3);
-
-		//Default braking force, always added otherwise there is no friction on the wheels
-		this->vehicle->setBrake(10, 2);
-		this->vehicle->setBrake(10, 3);
+		letOffAccelerator();
+		letOffBrake();
 		handled = true;
 	}
 
 	if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) != GLFW_PRESS)
 	{
-		//this->vehicle->setBrake(0, 2);
-		//this->vehicle->setBrake(0, 3);
 		handled = true;
 	}
 

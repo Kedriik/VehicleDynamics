@@ -49,6 +49,7 @@ protected:
 	std::vector<IndexedVerticesObject*> indexedVerticesObjects;
 	vec4* vbo;
 	GLuint DebugBuffer;
+	IndexedVerticesObject* sphereObj;
 	struct perFrameData
 	{
 		mat4 ViewMatrix;
@@ -153,10 +154,10 @@ public:
 		std::vector<glm::dvec2> texCoords;
 		std::vector<unsigned int> sphereindices;
 		std::vector<unsigned int> spherelinesIndices;
-		ShapesGenerator::generateSphereShape(sphereVertices, sphereNormals, texCoords, sphereindices, spherelinesIndices);
-		IndexedVerticesObject* sphereObj = new IndexedVerticesObject(sphereVertices, sphereindices, GL_TRIANGLES, glm::dvec4(1, 1, 0, 1));
+		ShapesGenerator::generateSphereShape(sphereVertices, sphereNormals, texCoords, sphereindices, spherelinesIndices,0.1);
+		sphereObj = new IndexedVerticesObject(sphereVertices, sphereindices, GL_TRIANGLES, glm::dvec4(1, 1, 0, 1));
 		sphereObj->generateVBO();
-		indexedVerticesObjects.push_back(sphereObj);
+		//indexedVerticesObjects.push_back(sphereObj);
 
 
 //		indexedVerticesObjects.push_back(cylinderObj);
@@ -311,7 +312,7 @@ public:
 			double initialAngle = atan2(det, dot);
 			btTransform initialTransform;
 			initialTransform.setRotation(btQuaternion(btVector3(0,0,-1), initialAngle)* btQuaternion(btVector3(1, 0, 0), 1.57));
-			initialTransform.setOrigin(btVector3(start_pos.x, start_pos.y, 3));
+			initialTransform.setOrigin(btVector3(start_pos.x, start_pos.y, 1));
 			vehicleDynamics->setInitialTransform(initialTransform);
  			vehicleDynamics->initPhysics(ivos);
 			for (int i = 0; i < 4; i++) {
@@ -332,9 +333,9 @@ public:
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 			if (doPhysics) {
 				vehicleDynamics->keyboardCallback(window);
-				vehicleDynamics->dynamicsWorld->stepSimulation(deltaTime);
-				std::cout << '\r' << "                     " <<  std::flush;
-				std::cout <<'\r'<< vehicleDynamics->getCurrentSpeedKmHour() <<" km/h"<< std::flush;
+				vehicleDynamics->stepSimulation(deltaTime);
+				//std::cout << '\r' << "                     " <<  std::flush;
+				//std::cout <<'\r'<< vehicleDynamics->getCurrentSpeedKmHour() <<" km/h"<< std::flush;
 				if (doDebugDraw || glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS) {
 					dd->prepareFrame(ViewMatrix, RenderProgram);
 					vehicleDynamics->dynamicsWorld->debugDrawWorld();
@@ -446,6 +447,7 @@ public:
 					glDrawArrays(wheel->getDrawMode(), 0, wheel->vertices.size());
 
 				}
+				//sphereObj
 				glm::mat4 ModelMatrix = glm::mat4(1.0);
 				float matChassis[16];
 				vehicleDynamics->getChassisTransform().getOpenGLMatrix(matChassis);
@@ -467,6 +469,27 @@ public:
 				//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, chassis->IndexBuffer);
 				//glDrawElements(chassis->getDrawMode(), chassis->indexes.size(), GL_UNSIGNED_INT, (void*)0);
 				glDrawArrays(chassis->getDrawMode(), 0, chassis->vertices.size());
+
+				ModelMatrix = glm::mat4(1.0);
+				vehicleDynamics->getChassisMassCenter().getOpenGLMatrix(matChassis);
+				ModelMatrix = glm::make_mat4(matChassis);
+				glUniformMatrix4fv(glGetUniformLocation(RenderProgram, "ModelMatrix"), 1, GL_FALSE, &ModelMatrix[0][0]);
+				glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, sphereObj->getColor());
+				glEnableVertexAttribArray(0);
+				glBindBuffer(GL_ARRAY_BUFFER, sphereObj->getVBO());
+				glVertexAttribPointer(
+					0,                  // attribute. No particular reason for 3, but must match the layout in the shader.
+					4,                  // size
+					GL_DOUBLE,           // type
+					GL_FALSE,           // normalized?
+					0,                  // stride
+					(void*)0            // array buffer offset
+				);
+
+				//GLuint _vbo = this->verticesObjects.at(i)->getVBO();
+				//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, chassis->IndexBuffer);
+				//glDrawElements(chassis->getDrawMode(), chassis->indexes.size(), GL_UNSIGNED_INT, (void*)0);
+				glDrawArrays(sphereObj->getDrawMode(), 0, sphereObj->vertices.size());
 			}
 
 			///////////////

@@ -29,17 +29,17 @@
 #include <random>
 
 #define GLM_SWIZZLE
-class OpenDriveMath {
-public:
+namespace OpenDriveMath {
 	double static fx(double t) {
 		return cos(t * t);
 	}
+	
 	double static fy(double t) {
 		return sin(t * t);
 	}
 };
-template<typename T>
-T trapezoidalIntegral(std::function<double(double)> f, T a, T b, int n) {
+template<typename F, typename T>
+T trapezoidalIntegral(F f, T a, T b, int n) {
 	T h = (b - a) / n;
 	T result = 0.5 * f(a) + 0.5 * f(b);
 	for (int i = 0; i < n; i++) {
@@ -315,6 +315,8 @@ struct line :Geometry {
 		return position;
 	}
 };
+using OpenDriveMath::fx;
+using OpenDriveMath::fy;
 struct spiral :Geometry {
 	spiral(double _curvStart, double _curvEnd, double _s, double _x, double _y, double _hdg, double _length) :
 		curvStart(_curvStart), curvEnd(_curvEnd), Geometry(_s, _x, _y, _hdg, _length) {
@@ -397,8 +399,8 @@ public:
 			a = 1 / (sqrt(2 * (1 / abs(this->curvEnd)) * this->length));
 			double step = this->length / this->n_vertices;
 			for (int i = 0; i <= this->n_vertices; i++) {
-				x = (1 / a) * trapezoidalIntegral(OpenDriveMath::fx, 0.0, a * step * i, n_integral);
-				y = dir * (1 / a) * trapezoidalIntegral(OpenDriveMath::fy, 0.0, a * step * i, n_integral);
+				x = (1 / a) * trapezoidalIntegral(fx, 0.0, a * step * i, n_integral);
+				y = dir * (1 / a) * trapezoidalIntegral(fy, 0.0, a * step * i, n_integral);
 				this->transformAndAddVertex(x, y, 0, 0);
 			}
 		}

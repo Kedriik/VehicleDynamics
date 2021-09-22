@@ -43,7 +43,7 @@ public:
 	static void generateSphereShape(
 		std::vector<glm::dvec4>& vertices, std::vector<glm::dvec3>& normals,
 		std::vector<glm::dvec2>& texCoords, std::vector<unsigned int>& indices,
-		std::vector<unsigned int>& lineIndices, int radius = 1, int stackCount = 100, int sectorCount = 100) {
+		std::vector<unsigned int>& lineIndices, float radius = 1, int stackCount = 100, int sectorCount = 100) {
 		double PI = 3.14159265359;
 		// clear memory of prev arrays
 		std::vector<glm::dvec4>().swap(vertices);
@@ -511,6 +511,9 @@ public:
 	virtual btScalar getWheelRadius() = 0;
 	virtual float getCurrentSpeedKmHour() {
 		return 0;
+	}
+	virtual btTransform getChassisMassCenter() {
+		return btTransform();
 	}
 };
 class btUtils {
