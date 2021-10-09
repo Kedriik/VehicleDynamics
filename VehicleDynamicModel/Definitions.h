@@ -368,6 +368,14 @@ public:
 		return data;
 	}
 };
+struct VectorRenderObject {
+	btVector3 v;
+	btVector3 origin;
+	VectorRenderObject(btVector3 v, btVector3 origin):v(v), origin(origin) {
+
+	}
+
+};
 class VerticesObject:ModelTransformation {
 public:
 	std::vector<glm::dvec4> vertices;

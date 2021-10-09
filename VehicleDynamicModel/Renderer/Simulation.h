@@ -288,11 +288,12 @@ public:
 		GLuint drawMode = GL_FILL;
 		double iddleTime = 0;
 		bool doDebugDraw = false;
-		IVehicleDynamics* vehicleDynamics = new CarHandling();
+		CarHandling* vehicleDynamics = new CarHandling();
 		std::vector<VerticesObject*> wheels;
 		std::vector<float> wheelRotations;
 		VerticesObject* chassis = nullptr;
 		DebugDraw* dd = new DebugDraw();
+		std::vector<VectorRenderObject> vectorsToShow;
 		if (doPhysics) {	
 			chassis = generateChassis();
 			std::vector<IndexedVerticesObject*> ivos;
@@ -323,11 +324,27 @@ public:
 			vehicleDynamics->dynamicsWorld->getDebugDrawer()->setDebugMode(btIDebugDraw::DBG_DrawWireframe);
 		
 		}
+		std::vector<VectorRenderObject> VectorsToRender;
+		GLuint VectorVBO,VectorColorBuffer;
+		glGenBuffers(1, &VectorColorBuffer);
+		glGenBuffers(1, &VectorVBO);
+		glm::dvec4* vbo;
+
+		double frames = 60.0;
 		do
 		{
 			static double lastTime = glfwGetTime();
 			double currentTime = glfwGetTime();
 			deltaTime = double(currentTime - lastTime);
+			double f = 1.0 / frames;
+			double sleepFor =  f - deltaTime;
+			
+			if (sleepFor > 0) {
+				//sleepFor *= 1000000.0;
+				std::this_thread::sleep_for(std::chrono::microseconds(long(1000000.0*sleepFor)));
+			}
+			deltaTime += sleepFor;
+			std::cout << (deltaTime) << std::endl;
 			loopTotalTime += deltaTime;
 			///////////////
 			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -465,9 +482,6 @@ public:
 					(void*)0            // array buffer offset
 				);
 
-				//GLuint _vbo = this->verticesObjects.at(i)->getVBO();
-				//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, chassis->IndexBuffer);
-				//glDrawElements(chassis->getDrawMode(), chassis->indexes.size(), GL_UNSIGNED_INT, (void*)0);
 				glDrawArrays(chassis->getDrawMode(), 0, chassis->vertices.size());
 
 				ModelMatrix = glm::mat4(1.0);
@@ -486,12 +500,61 @@ public:
 					(void*)0            // array buffer offset
 				);
 
-				//GLuint _vbo = this->verticesObjects.at(i)->getVBO();
-				//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, chassis->IndexBuffer);
-				//glDrawElements(chassis->getDrawMode(), chassis->indexes.size(), GL_UNSIGNED_INT, (void*)0);
 				glDrawArrays(sphereObj->getDrawMode(), 0, sphereObj->vertices.size());
+
+				//vectorsToShow.push_back(VectorRenderObject(btVector3(0, 0, 100), btVector3(0, 0, 0)));
+				vectorsToShow.push_back(VectorRenderObject(vehicleDynamics->CarVelocity, vehicleDynamics->getChassisCentreOfMass()));
+				//vectorToShow.push_back(vectorRenderObject(vehicleDynamics->vehicle->getWheelInfo(0)))
+				ModelMatrix = glm::mat4(1.0);
+				vehicleDynamics->getChassisMassCenter().getOpenGLMatrix(matChassis);
+				ModelMatrix = glm::make_mat4(matChassis);
+				glUniformMatrix4fv(glGetUniformLocation(RenderProgram, "ModelMatrix"), 1, GL_FALSE, &ModelMatrix[0][0]);
+				glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, sphereObj->getColor());
+				glEnableVertexAttribArray(0);
+				glBindBuffer(GL_ARRAY_BUFFER, sphereObj->getVBO());
+				glVertexAttribPointer(
+					0,                  // attribute. No particular reason for 3, but must match the layout in the shader.
+					4,                  // size
+					GL_DOUBLE,           // type
+					GL_FALSE,           // normalized?
+					0,                  // stride
+					(void*)0            // array buffer offset
+				);
+
+				glDrawArrays(sphereObj->getDrawMode(), 0, sphereObj->vertices.size());
+				
+				glDisable(GL_DEPTH_TEST);
+				for (auto v : vectorsToShow){
+					btVector3 from = v.origin;
+					btVector3 to = from + v.v;
+					ModelMatrix = glm::mat4(1.0);
+					glUniformMatrix4fv(glGetUniformLocation(RenderProgram, "ModelMatrix"), 1, GL_FALSE, &ModelMatrix[0][0]);
+					glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 6, sphereObj->getColor());
+					glBindBuffer(GL_SHADER_STORAGE_BUFFER, VectorVBO);
+					glBufferData(GL_SHADER_STORAGE_BUFFER, 2 * sizeof(dvec4), NULL, GL_DYNAMIC_COPY);
+					vbo = (dvec4*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, 2 * sizeof(dvec4),
+						GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
+					vbo[0] = dvec4(from.x(), from.y(), from.z(), 1.0);
+					vbo[1] = dvec4(to.x(), to.y(), to.z(), 1.0);
+					glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+					glBindBuffer(GL_ARRAY_BUFFER, VectorVBO);
+					//glBindBuffer(GL_ARRAY_BUFFER, sphereObj->getVBO());
+					glEnableVertexAttribArray(0);
+					glVertexAttribPointer(
+						0,                  // attribute. No particular reason for 3, but must match the layout in the shader.
+						4,                  // size
+						GL_DOUBLE,           // type
+						GL_FALSE,           // normalized?
+						0,                  // stride
+						(void*)0            // array buffer offset
+					);
+					glDrawArrays(GL_LINES, 0, 2);
+				}
+				glEnable(GL_DEPTH_TEST);
 			}
 
+
+			vectorsToShow.clear();
 			///////////////
 			lastTime = currentTime;
 			glfwSwapBuffers(window);
